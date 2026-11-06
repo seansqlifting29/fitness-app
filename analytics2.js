@@ -1,0 +1,457 @@
+(function(){
+/* ===== Analytics: Overview / Advanced, computed from your logged sets ===== */
+(function(){const st=document.createElement('style');st.textContent=`
+.an-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px}
+.an-hd h1{font-size:30px;font-weight:800;letter-spacing:-.6px;display:flex;align-items:center;gap:10px}
+.an-sample{font-size:10.5px;font-weight:900;letter-spacing:.8px;color:var(--t3);border:1px solid #3a3a37;border-radius:8px;padding:3px 6px;cursor:pointer}
+.an-editb{background:var(--card2);border-radius:14px;padding:8px 14px;font-weight:800;font-size:14px;color:var(--t2)}
+.an-editb.on{background:var(--t1);color:#111}
+.an-seg{display:flex;gap:4px;margin:0 14px 12px;background:var(--card);border-radius:16px;padding:4px}
+.an-seg button{flex:1;padding:9px 0;border-radius:12px;font-weight:800;font-size:14px;color:var(--t3)}
+.an-seg button.on{background:var(--t1);color:#111}
+.an-exsel{display:flex;gap:6px;overflow-x:auto;padding:0 14px 12px;scrollbar-width:none}
+.an-exsel::-webkit-scrollbar{display:none}
+.an-exsel button{flex:none;border-radius:16px;padding:8px 13px;font-size:13.5px;font-weight:700;background:var(--card2);color:var(--t2);display:flex;align-items:center;gap:7px}
+.an-exsel button i{width:9px;height:9px;border-radius:50%;border:1.5px solid #f0efec}
+.an-exsel button.on{background:var(--t1);color:#111}
+.an-exsel button.on i{border-color:#111}
+.an-card{margin:0 14px 12px;border-radius:24px;padding:16px 14px 12px;position:relative;background:#1a1a19;border:1px solid #242423;cursor:pointer}
+.an-card .an-bar{position:absolute;left:18px;right:18px;top:0;height:3px;border-radius:0 0 3px 3px}
+.an-card .an-k{font-size:11.5px;font-weight:900;letter-spacing:1px}
+.an-card h3{font-size:22px;font-weight:900;letter-spacing:-.5px;line-height:1.12;margin:4px 0 10px;padding-right:30px}
+.an-card h3 span{opacity:.5}
+.an-card .an-more{position:absolute;z-index:3;right:14px;top:14px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:900;background:#2a2a28;color:var(--t2)}
+.an-card .an-ctl{position:absolute;right:12px;top:12px;display:flex;gap:6px;z-index:3}
+.an-card .an-ctl button{width:32px;height:32px;border-radius:50%;background:#2e2e2b;color:#fff;font-size:15px;font-weight:900}
+.an-card.ed{animation:anwig .35s}
+@keyframes anwig{0%{transform:rotate(0)}30%{transform:rotate(-.6deg)}60%{transform:rotate(.5deg)}100%{transform:none}}
+.an-empty{font-size:14px;color:var(--t3);padding:20px 4px;text-align:center}
+svg.ch{display:block;width:100%;height:auto;overflow:visible}
+.ch text{font-family:Inter,system-ui,sans-serif}
+.an-keys{display:flex;gap:12px;flex-wrap:wrap;padding:6px 4px 0;font-size:11.5px;font-weight:800;color:var(--t2)}
+.an-keys span{display:flex;align-items:center;gap:5px}
+.an-keys svg{width:13px;height:13px}
+.an-segbar{display:flex;gap:3px;height:44px;margin:4px 0 10px}
+.an-segbar div{height:100%;border-radius:6px;box-shadow:inset 0 0 0 1.5px #f0efec}
+.an-seglab{display:flex;justify-content:space-between;gap:8px}
+.an-seglab div{font-size:12px;color:var(--t3);font-weight:700}
+.an-seglab b{display:block;font-size:18px;color:var(--t1);font-weight:900;letter-spacing:-.3px}
+.an-seglab i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;border:1.5px solid #f0efec;vertical-align:-1px}
+.an-axes{display:flex;gap:8px;margin:0 0 10px;flex-wrap:wrap}
+.an-axes button{display:flex;align-items:center;gap:6px;background:var(--card2);border-radius:12px;padding:8px 11px;font-size:13px;font-weight:800;color:var(--t1)}
+.an-axes button small{color:var(--t3);font-weight:800}
+.an-addc{margin:0 14px 12px;width:calc(100% - 28px);border:2px dashed #3a3a37;border-radius:24px;padding:22px;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;font-size:16px;color:var(--t2)}
+.an-scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:59;animation:anfade .15s}
+@keyframes anfade{from{opacity:0}}
+.an-sheet .sclose{position:sticky;float:right;top:0;margin:-4px -4px 0 8px}
+.an-sheet{position:absolute;left:0;right:0;bottom:0;z-index:60;background:#1b1b1a;border-radius:26px 26px 0 0;padding:10px 18px 28px;max-height:82%;overflow:auto;animation:anup .22s ease-out;box-shadow:0 -10px 40px rgba(0,0,0,.5)}
+@keyframes anup{from{transform:translateY(40px);opacity:0}}
+.an-grab{width:38px;height:5px;border-radius:3px;background:#3a3a37;margin:0 auto 14px}
+.an-sheet .an-k{font-size:12px;font-weight:900;letter-spacing:1px}
+.an-sheet h3{font-size:22px;font-weight:900;letter-spacing:-.5px;line-height:1.18;margin:6px 0 12px}
+.an-facts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.an-facts div{background:var(--card2);border-radius:16px;padding:12px}
+.an-facts b{display:block;font-size:22px;font-weight:900;letter-spacing:-.5px}
+.an-facts small{font-size:12.5px;color:var(--t3);font-weight:600;line-height:1.3;display:block}
+.an-sheet p{font-size:14.5px;color:var(--t2);line-height:1.45}
+.an-sheet p+p{margin-top:8px}
+.an-sheet .an-src{font-size:12.5px;color:var(--t3);margin-top:12px}
+.an-opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card2);border-radius:18px;padding:12px;margin-bottom:8px}
+.an-opt .an-sw{width:44px;height:44px;border-radius:14px;flex:none;display:grid;place-items:center;background:#1a1a19}
+.an-opt .an-sw svg{width:30px;height:30px}
+.an-opt b{display:block;font-size:15.5px}
+.an-opt small{font-size:12.5px;color:var(--t3)}
+.an-opt .an-st{margin-left:auto;font-size:12.5px;font-weight:800;color:var(--t3);flex:none}
+.an-opt .an-st.add{background:var(--t1);color:#111;border-radius:12px;padding:6px 10px}
+.an-opt.on{background:var(--t1);color:#111}.an-opt.on small{color:#55554f}
+.an-tip{position:fixed;z-index:60;pointer-events:none;background:#f0efec;color:#111;border-radius:10px;padding:7px 10px;font-size:12.5px;font-weight:600;line-height:1.35;box-shadow:0 8px 24px rgba(0,0,0,.45);transform:translate(-50%,calc(-100% - 12px));white-space:nowrap;display:none}
+.an-tip b{font-weight:800}
+
+.an-hd,.an-seg,.an-exsel,.an-card,.an-addc,.an-nolift{flex-shrink:0}
+.an-exsel button{line-height:1.25}
+.an-rings{margin:0 14px 10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;flex-shrink:0}
+.an-ring{background:#1a1a19;border:1px solid #242423;border-radius:24px;padding:14px 10px 14px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.an-ring svg{width:118px;height:118px;display:block}
+.an-ring .an-rl{font-size:12px;font-weight:900;letter-spacing:1px}
+.an-ring .an-rs{font-size:13px;color:#a9a89f;font-weight:700}
+.an-cheer{margin:2px 18px 16px;font-size:16px;font-weight:800;color:var(--t1);flex-shrink:0}
+.an-sec{margin:4px 18px 10px;font-size:12px;font-weight:900;letter-spacing:1px;color:#a9a89f;flex-shrink:0}
+.an-ach{display:flex;gap:8px;overflow-x:auto;padding:0 14px 16px;scrollbar-width:none;flex-shrink:0}
+.an-ach::-webkit-scrollbar{display:none}
+.an-medal{flex:none;width:118px;background:#1a1a19;border:1px solid #242423;border-radius:20px;padding:12px 11px;display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left}
+.an-medal svg{width:38px;height:38px;margin-bottom:4px}
+.an-medal b{font-size:14px;font-weight:800}
+.an-medal .an-mv{font-size:20px;font-weight:900;letter-spacing:-.4px;color:var(--t1)}
+.an-medal .an-pb2{width:100%;height:5px;border-radius:3px;background:#2a2a28;overflow:hidden;margin-top:4px}.an-medal .an-pb2 i{display:block;height:100%;border-radius:3px}
+.an-medal small{font-size:12px;color:#a9a89f;font-weight:700;margin-top:2px}
+.an-krow{display:flex;align-items:center;gap:8px;padding-right:30px}
+.an-lp{display:flex;align-items:center;gap:6px;background:#262624;border-radius:12px;padding:5px 10px;font-size:12.5px;font-weight:800;color:var(--t1)}
+.an-lp i{width:8px;height:8px;border-radius:50%;border:1.5px solid #f0efec}
+.an-tier{display:flex;align-items:center;gap:12px;background:var(--card2);border-radius:16px;padding:10px 12px;margin-bottom:7px}
+.an-tier svg{width:30px;height:30px;flex:none}.an-tier b{font-size:15px}.an-tier span{margin-left:auto;font-size:13px;font-weight:700;color:#a9a89f}
+.an-tier.got span{color:var(--t1)}
+.an-lock{background:#151514;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.an-lock b{font-size:15px}.an-lock span{font-size:13px;color:#8a8980}
+.an-lock .an-pb{height:6px;border-radius:3px;background:#2a2a28;overflow:hidden}.an-lock .an-pb i{display:block;height:100%;background:#f0efec;border-radius:3px}
+.an-nolift{margin:0 14px 12px;background:#1a1a19;border-radius:24px;padding:22px;color:#8a8980;font-size:14px;line-height:1.45}
+.an-nolift b{display:block;color:#f0efec;font-size:17px;margin-bottom:4px}
+`;document.head.appendChild(st)})();
+const DAY=864e5;const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN;
+const e1rm=s=>s.w*(1+s.r/30);// Epley
+const MONA=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let HIST=[],SETS=[],LIFTS=[],LCOL={},NOW=Date.now(),SPAN_M=0,anKey='';
+const PAL=['#3987e5','#d95926','#199e70','#c98500','#d55181','#9085e9','#e66767','#008300'];
+const GCOL={Chest:'#3987e5',Back:'#d95926',Legs:'#199e70',Shoulders:'#c98500',Arms:'#d55181',Core:'#9085e9',Glutes:'#e66767'};
+const monthIdx=t=>{const d=new Date(t),s=new Date(HIST[0].start);return (d.getFullYear()-s.getFullYear())*12+d.getMonth()-s.getMonth()};
+const monthName=i=>{const s=new Date(HIST[0].start);const d=new Date(s.getFullYear(),s.getMonth()+i,1);return MONA[d.getMonth()]+(SPAN_M>=12&&(i===0||i===SPAN_M)?" '"+String(d.getFullYear()).slice(2):'')};
+// rebuild the per-set table whenever history changes
+function anRefresh(){const key=hist.length+':'+(hist.length?(hist[hist.length-1].id||'')+(hist[hist.length-1].start||''):'');if(key===anKey)return;anKey=key;
+  HIST=hist.filter(h=>h&&Array.isArray(h.ex)&&h.ex.length).map(h=>{const st=h.start||fromKey(h.date).getTime()+12*36e5;return{start:st,end:st+(h.total||0),split:h.split,ex:h.ex}}).sort((a,b)=>a.start-b.start);
+  NOW=Math.max(Date.now(),HIST.length?HIST[HIST.length-1].end:0);SPAN_M=HIST.length?monthIdx(HIST[HIST.length-1].start):0;
+  const rows=[];HIST.forEach((S,si)=>{const gapD=si?Math.round((new Date(S.start).setHours(0,0,0,0)-new Date(HIST[si-1].start).setHours(0,0,0,0))/DAY):null;const hour=new Date(S.start).getHours()+new Date(S.start).getMinutes()/60;
+    S.ex.forEach(E=>(E.sets||[]).forEach((s,i)=>{if(!(s.r>0))return;const prev=i?E.sets[i-1]:null;rows.push({si,start:S.start,hour,gapD,ex:E.name,group:groupOf(E.name),set:i+1,w:+s.w||0,r:s.r,tut:(s.tut||0)/1000,rest:s.rest?s.rest/1000:null,
+      pace:s.tut?s.tut/1000/s.r:null,e1:e1rm(s),prevR:prev?prev.r:null,prevW:prev?prev.w:null})}))});
+  const by={};rows.forEach(r=>{(by[r.ex]=by[r.ex]||[]).push(r)});
+  Object.values(by).forEach(L=>{L.sort((a,b)=>a.start-b.start);let lo=0,hi=0;L.forEach((r,i)=>{while(L[lo].start<r.start-21*DAY)lo++;while(hi<L.length-1&&L[hi+1].start<=r.start+21*DAY)hi++;let top=0;for(let k=lo;k<=hi;k++)top=Math.max(top,L[k].e1);r.rel=top?r.e1/top*100:100;r.load=top?r.w/top*100:0})});
+  SETS=rows;const c={},sess={},top={};rows.forEach(r=>{if(r.w>0){c[r.ex]=(c[r.ex]||0)+1;(sess[r.ex]=sess[r.ex]||new Set()).add(r.si);top[r.ex]=Math.max(top[r.ex]||0,r.e1)}});
+  // your main lifts first: logged in enough sessions, heaviest first
+  LIFTS=Object.keys(c).filter(n=>c[n]>=6&&sess[n].size>=3).sort((a,b)=>top[b]-top[a]).slice(0,8);LCOL=Object.fromEntries(LIFTS.map((n,i)=>[n,PAL[i%8]]));
+  if(!LIFTS.includes(ex))ex=LIFTS[0]||null}
+let tab='overview',ex=S.get('gym.anEx',null),edit=false;
+// chart lists per tab; older Overview/Strength/Deep layouts carry over
+const lists=(()=>{const n=S.get('gym.charts2',null);if(n&&Array.isArray(n.overview)&&Array.isArray(n.advanced))return n;
+  const o=S.get('gym.charts',null)||{};const uniq=a=>[...new Set(a)];
+  const ov=Array.isArray(o.general)||Array.isArray(o.strength)?uniq([...(o.general||[]),...(o.strength||[])]):['consist','lifts','prog','rate','gymtime','split','muscle'];
+  return{overview:ov,advanced:Array.isArray(o.deep)?o.deep:['tens','len','rest','custom:week:e1']}})();
+const saveLists=()=>S.set('gym.charts2',lists);
+function spearman(xs,ys){const rk=a=>{const idx=a.map((v,i)=>[v,i]).sort((p,q)=>p[0]-q[0]);const r=new Array(a.length);for(let i=0;i<idx.length;){let j=i;while(j+1<idx.length&&idx[j+1][0]===idx[i][0])j++;for(let k=i;k<=j;k++)r[idx[k][1]]=(i+j)/2;i=j+1}return r};
+  const a=rk(xs),b=rk(ys),ma=avg(a),mb=avg(b);let n=0,da=0,db=0;for(let i=0;i<a.length;i++){n+=(a[i]-ma)*(b[i]-mb);da+=(a[i]-ma)**2;db+=(b[i]-mb)**2}return da&&db?n/Math.sqrt(da*db):0}
+const linkWord=r=>{const a=Math.abs(r);return a<.1?'no clear':a<.3?'a weak':a<.5?'a moderate':'a strong'};
+function bins(pts,x0,w,nb,minN=4){const out=[];for(let b=0;b<nb;b++){const a=x0+b*w;const ys=pts.filter(p=>p.x>=a&&p.x<a+w).map(p=>p.y);if(ys.length>=minN)out.push({x:a+w/2,lo:a,hi:a+w,y:avg(ys),n:ys.length})}return out}
+function qbins(pts,nb=8,minN=4){const s=[...pts].sort((a,b)=>a.x-b.x);if(s.length<minN*2)return[];const size=Math.max(minN,Math.ceil(s.length/nb));const out=[];
+  for(let i=0;i<s.length;i+=size){const g=s.slice(i,i+size);if(g.length<minN)break;out.push({x:avg(g.map(p=>p.x)),lo:g[0].x,hi:g[g.length-1].x,y:avg(g.map(p=>p.y)),n:g.length})}return out}
+const mmss=v=>Math.floor(v/60)+':'+String(Math.round(v%60)).padStart(2,'0');
+const hh=v=>{const h=Math.floor(v)%24;return (h%12||12)+(h<12?'am':'pm')};
+const W=330;
+let DRILLS=[];const regDrill=fn=>{DRILLS.push(fn);return 'd'+(DRILLS.length-1)};
+const fmtDate=t=>{const d=new Date(t);return MONA[d.getMonth()]+' '+d.getDate()};const fmtDay=t=>['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(t).getDay()]+' '+fmtDate(t);
+function slope(pts){const n=pts.length;if(n<2)return 0;const mx=avg(pts.map(p=>p.x)),my=avg(pts.map(p=>p.y));let a=0,b=0;pts.forEach(p=>{a+=(p.x-mx)*(p.y-my);b+=(p.x-mx)**2});return b?a/b:0}
+// raw scatter of every set behind a summary chart, with the tapped group lit up
+function rawDrill(title,acc,raw,inGroup,xfmt,yfmt,label){const pts=raw.map(r=>({x:r.x,y:r.y,col:inGroup(r)?acc:'#3a3a37',z:inGroup(r)?1:0,r0:r})).sort((a,b)=>a.z-b.z);const hit=raw.filter(inGroup);
+  const top=[...hit].sort((a,b)=>b.y-a.y).slice(0,4);
+  return{k:title,h:`${hit.length} sets ${label}`,chart:{series:[{noLine:true,r:3.2,ring:'#1a1a19',pts,tip:p=>`<b>${fmtDate(p.r0.t)}</b> · ${p.r0.w} kg × ${p.r0.r}<br>${xfmt(p.x)} · ${yfmt(p.y)}`}],xfmt,yfmt,ht:190},
+    facts:[[yfmt(avg(hit.map(r=>r.y))),'average of these sets'],[yfmt(avg(raw.map(r=>r.y))),'average of all sets']],rows:top.map(r=>[fmtDay(r.t),`${r.w} kg × ${r.r} · ${xfmt(r.x)}`,yfmt(r.y)])}}
+function mark(x,y,shape,col,r,ring='#f0efec'){const st=`stroke="${ring}" stroke-width="1.7"`;
+  if(shape==='s')return `<rect x="${(x-r*.88).toFixed(1)}" y="${(y-r*.88).toFixed(1)}" width="${(r*1.76).toFixed(1)}" height="${(r*1.76).toFixed(1)}" rx="1.8" fill="${col}" ${st}/>`;
+  if(shape==='t')return `<path d="M${x.toFixed(1)} ${(y-r*1.15).toFixed(1)}L${(x+r*1.05).toFixed(1)} ${(y+r*.82).toFixed(1)}L${(x-r*1.05).toFixed(1)} ${(y+r*.82).toFixed(1)}Z" fill="${col}" ${st} stroke-linejoin="round"/>`;
+  return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${col}" ${st}/>`}
+const nice=(lo,hi,n=3)=>{const span=hi-lo||1;const st=Math.pow(10,Math.floor(Math.log10(span/n)));const m=[1,2,2.5,5,10].find(k=>span/(k*st)<=n+1)*st;const a=Math.floor(lo/m)*m,b=Math.ceil(hi/m)*m;const t=[];for(let v=a;v<=b+1e-9;v+=m)t.push(+v.toFixed(6));return t};
+function chart(c,accent){const pad={l:32,r:10,t:16,b:22},h=c.ht||170;
+  const allY=c.series.flatMap(S=>S.pts.map(p=>p.y)),allX=c.series.flatMap(S=>S.pts.map(p=>p.x));if(!allY.length)return `<div class="an-empty">Not enough sets yet for this one.</div>`;
+  const yt=c.yt||nice(Math.min(...allY),Math.max(...allY));const xr=c.xr||[Math.min(...allX),Math.max(...allX)];const yr=[yt[0],yt[yt.length-1]];
+  const X=v=>pad.l+(v-xr[0])/((xr[1]-xr[0])||1)*(W-pad.l-pad.r),Y=v=>pad.t+(1-(v-yr[0])/((yr[1]-yr[0])||1))*(h-pad.t-pad.b);
+  let o=`<svg class="ch" viewBox="0 0 ${W} ${h}"><defs><filter id="gl" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="3"/></filter></defs>`;
+  if(c.band)o+=`<rect x="${X(c.band[0])}" y="${pad.t}" width="${Math.max(6,X(c.band[1])-X(c.band[0]))}" height="${h-pad.t-pad.b}" rx="10" fill="rgba(240,239,236,.06)"/>`;
+  yt.forEach(v=>o+=`<line x1="${pad.l}" x2="${W-pad.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="#262624"/><text x="${pad.l-6}" y="${Y(v)+3.5}" text-anchor="end" font-size="10" font-weight="600" fill="#8a8980">${c.yfmt(v)}</text>`);
+  (c.xt||nice(xr[0],xr[1],4).filter(v=>v>=xr[0]&&v<=xr[1])).forEach(v=>o+=`<text x="${X(v)}" y="${h-5}" text-anchor="middle" font-size="10" font-weight="600" fill="#8a8980">${c.xfmt(v)}</text>`);
+  c.series.forEach(S=>{const col=S.col||accent;
+    if(S.pts.length>1&&!S.noLine)o+=`<path d="${S.pts.map((p,k)=>(k?'L':'M')+X(p.x).toFixed(1)+' '+Y(p.y).toFixed(1)).join('')}" fill="none" stroke="rgba(240,239,236,.8)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" ${S.dash?'stroke-dasharray="3 4"':''}/>`;
+    S.pts.forEach(p=>{const isC=(c.crit||[]).some(q=>q.p===p);if(isC)o+=`<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="9" fill="${col}" opacity=".3" filter="url(#gl)"/>`;o+=mark(X(p.x),Y(p.y),S.shape||'c',p.col||col,isC?6.8:(S.r||5),S.ring||'#f0efec')})});
+  (c.crit||[]).forEach(q=>{const x=X(q.p.x),y=Y(q.p.y);const w=q.label.length*6.4+16;const lx=Math.min(W-pad.r-w/2,Math.max(pad.l+w/2,x));const ly=y-15<pad.t+6?y+24:y-17;
+    o+=`<rect x="${lx-w/2}" y="${ly-10}" width="${w}" height="18" rx="9" fill="#f0efec"/><text x="${lx}" y="${ly+3}" text-anchor="middle" font-size="10.5" font-weight="900" fill="#0e0e0e">${q.label}</text>`});
+  c.series.forEach((S,si)=>S.pts.forEach((p,pi)=>{if(!S.tip)return;const dk=S.drill?regDrill(()=>S.drill(p,pi)):'';o+=`<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="${S.r&&S.r<4?7:13}" fill="transparent" data-tip="${S.tip(p)}${dk?'<br><small>Tap to see the sets</small>':''}" ${dk?`data-drill="${dk}"`:''}/>`}));
+  o+='</svg>';
+  if(c.series.length>1&&!c.nokeys)o+=`<div class="an-keys">${c.series.map(S=>`<span><svg viewBox="-7 -7 14 14">${mark(0,0,S.shape||'c',S.col||accent,4.4)}</svg>${S.name}</span>`).join('')}</div>`;
+  return o}
+
+
+function monthlyBest(n){const mo={};SETS.filter(r=>r.ex===n).forEach(r=>{const m=monthIdx(r.start);if(!mo[m]||r.e1>mo[m].y)mo[m]={x:m,y:r.e1,r}});return Object.values(mo).sort((a,b)=>a.x-b.x)}
+function atWeight(w){const R=exT().filter(r=>r.w===w);const t0=HIST[0].start;const pts=R.map(r=>({x:(r.start-t0)/DAY/30.4,y:r.tut,r}));const b=pts.reduce((a,c)=>c.y>a.y?c:a,pts[0]);
+  return{k:ex.toUpperCase()+' · '+w+' '+U().toUpperCase(),h:`${R.length} sets at ${w} ${U()}`,chart:{series:[{noLine:true,pts,col:LCOL[ex],tip:p=>`<b>${fmtDay(p.r.start)}</b> · set ${p.r.set}<br>${w} ${U()} × ${p.r.r} · ${Math.round(p.y)}s`}],xfmt:v=>monthName(Math.round(v)),yfmt:v=>v+'s',ht:160,crit:[{p:b,label:'Longest'}]},
+    facts:[[Math.round(b.y)+'s','longest, '+fmtDate(b.r.start)],[Math.round(avg(R.map(r=>r.tut)))+'s','average set']],p:['Every set you\'ve done at this weight, by date and time under tension.']}}
+function liftHistory(n){const pts=monthlyBest(n);const f=pts[0],l=pts[pts.length-1];const rate=slope(pts);
+  return{k:n.toUpperCase(),h:`${f.y.toFixed(1)} → ${l.y.toFixed(1)} ${U()}`,acc:LCOL[n],chart:{series:[{col:LCOL[n],pts,tip:p=>`<b>${monthName(p.x)}</b><br>${p.r.w} ${U()} × ${p.r.r} ≈ ${p.y.toFixed(1)} ${U()}`}],xr:[f.x,l.x],xt:[f.x,Math.round((f.x+l.x)/2),l.x],xfmt:i=>monthName(i),yfmt:v=>v%1?v.toFixed(1):v,ht:160,crit:[{p:f,label:'Start'},{p:l,label:'Now'}]},
+    facts:[[(rate>=0?'+':'')+rate.toFixed(1)+' '+U(),'a month on average'],[(l.y-f.y>=0?'+':'')+(l.y-f.y).toFixed(1)+' '+U(),'first month to last']],p:['Each point is the best set that month as an Epley one-rep max.']}}
+
+const S1='#3987e5',S2='#d95926',S3='#199e70';
+const exSets=()=>SETS.filter(r=>r.ex===ex);const exT=()=>exSets().filter(r=>r.tut>0);
+const CARDS={
+  consist:{tab:'overview',name:'Consistency',desc:'Sessions each week, last 12 weeks',hex:'#199e70',make(){
+    const wk=[];for(let w=11;w>=0;w--){const a=NOW-7*DAY*(w+1),b=NOW-7*DAY*w;wk.push({x:11-w,y:HIST.filter(S=>S.start>a&&S.start<=b).length})}
+    const av=avg(wk.map(p=>p.y));const best=wk.reduce((a,b)=>b.y>a.y?b:a,wk[0]);let run=0,longest=0;wk.forEach(p=>{run=p.y>=3?run+1:0;longest=Math.max(longest,run)});
+    return{k:'CONSISTENCY',h:`${av.toFixed(1)} a week`,ht:140,series:[{pts:wk,tip:p=>`<b>${p.x===11?'This week':(11-p.x)+' weeks ago'}</b><br>${p.y} session${p.y===1?'':'s'}`,drill:p=>{const w=11-p.x,a=NOW-7*DAY*(w+1),b=NOW-7*DAY*w;const ss=HIST.filter(S=>S.start>a&&S.start<=b);
+      return{k:'CONSISTENCY',h:`${p.x===11?'This week':(11-p.x)+' weeks ago'}: ${ss.length} session${ss.length===1?'':'s'}`,rows:ss.map(S=>[fmtDay(S.start),S.split,Math.round((S.end-S.start)/6e4)+' min'])}}}],
+      xr:[0,11],yt:[0,Math.max(4,best.y)],xt:[0,3,6,9,11],xfmt:i=>i===11?'Now':'-'+(11-i)+'w',yfmt:v=>v,crit:[{p:best,label:best.y+' sessions'}],
+      ins:{h:`You've averaged ${av.toFixed(1)} sessions a week over the last 12 weeks.`,facts:[[wk.filter(p=>p.y>=3).length+'/12','weeks with 3 or more sessions'],[longest+' wk','longest run of 3+ a week']],p:['Each point is one week, counted Monday to Sunday back from your latest session.'],n:wk.reduce((a,p)=>a+p.y,0)+' sessions'}}}},
+  gymtime:{tab:'overview',name:'Gym time',desc:'Average session length each month',hex:'#3987e5',make(){
+    const mo={};HIST.forEach(S=>{const m=monthIdx(S.start);(mo[m]=mo[m]||[]).push((S.end-S.start)/6e4)});const pts=Object.entries(mo).map(([m,a])=>({x:+m,y:avg(a),n:a.length})).sort((a,b)=>a.x-b.x);
+    const f=pts[0],l=pts[pts.length-1];const fast=pts.reduce((a,b)=>b.y<a.y?b:a,pts[0]);const d=Math.round(f.y-l.y);
+    return{k:'GYM TIME',h:`${Math.round(l.y)} min ${d?`<span>${d>0?'↓':'↑'}${Math.abs(d)} since ${monthName(f.x)}</span>`:''}`,ht:130,series:[{pts,tip:p=>`<b>${monthName(p.x)}</b><br>${Math.round(p.y)} min average · ${p.n} sessions`,drill:p=>{const ss=HIST.filter(S=>monthIdx(S.start)===p.x);const q=ss.map(S=>({x:new Date(S.start).getDate(),y:(S.end-S.start)/6e4,S}));const sh=q.reduce((a,b)=>b.y<a.y?b:a,q[0]);
+      return{k:'GYM TIME',h:`${monthName(p.x)}: ${ss.length} sessions`,chart:{series:[{noLine:true,pts:q,tip:t=>`<b>${fmtDay(t.S.start)}</b> · ${t.S.split}<br>${Math.round(t.y)} min`}],xr:[1,31],xt:[1,10,20,31],xfmt:v=>v,yfmt:v=>v+'m',ht:150,crit:[{p:sh,label:'Shortest'}]},facts:[[Math.round(p.y)+' min','average'],[Math.round(sh.y)+' min','shortest, '+fmtDate(sh.S.start)]]}}}],
+      xr:[f.x,l.x],xt:[f.x,Math.round((f.x+l.x)/2),l.x],xfmt:i=>monthName(i),yfmt:v=>v,crit:[{p:fast,label:'Shortest'}],
+      ins:{h:`Your sessions averaged ${Math.round(l.y)} minutes in ${monthName(l.x)}, ${d===0?'the same as':(Math.abs(d)+(Math.abs(d)===1?' minute ':' minutes ')+(d>0?'shorter':'longer')+' than')} in ${monthName(f.x)}.`,facts:[[Math.round(fast.y)+' min',monthName(fast.x)+', your shortest month'],[Math.round(avg(HIST.map(S=>(S.end-S.start)/6e4)))+' min','average over the year']],p:['Session length runs from when you start your first set timer to when you finish.'],n:HIST.length+' sessions'}}}},
+  split:{tab:'overview',name:'Where time goes',desc:'Lifting, resting and everything else',hex:'#d95926',make(){
+    const r=HIST.slice(-12);const per=r.map(S=>{const all=S.ex.flatMap(E=>E.sets);const lift=all.reduce((a,s)=>a+s.tut,0)/6e4,rest=all.reduce((a,s)=>a+(s.rest||0),0)/6e4,tot=(S.end-S.start)/6e4;return{lift,rest,other:tot-lift-rest,tot}});
+    const L=avg(per.map(p=>p.lift)),R=avg(per.map(p=>p.rest)),O=avg(per.map(p=>p.other)),T=L+R+O;const parts=[['Lifting','#199e70',L],['Resting','#d95926',R],['Other','#3987e5',O]];
+    return{k:'WHERE TIME GOES',h:`${Math.round(R/T*100)}% resting`,custom:`<div class="an-segbar">${parts.map(([n,c,v])=>`<div style="flex:${v};background:${c}" data-tip="<b>${n}</b><br>${v.toFixed(1)} min a session · ${Math.round(v/T*100)}%<br><small>Tap to see each session</small>" data-drill="${regDrill(()=>({k:'WHERE TIME GOES',h:'Your last 12 sessions',html:`<div style=\"display:flex;flex-direction:column;gap:7px;margin-bottom:12px\">${r.map((S,i)=>{const q=per[i];return `<div style=\"display:flex;align-items:center;gap:10px\"><span style=\"width:84px;font-size:12px;font-weight:700;color:#8a8980\">${fmtDate(S.start)}</span><div style=\"flex:1;display:flex;gap:2px;height:16px\">${[[q.lift,'#199e70'],[q.rest,'#d95926'],[q.other,'#3987e5']].map(([v,c])=>`<div style=\"flex:${v};background:${c};border-radius:3px\"></div>`).join('')}</div><span style=\"width:44px;text-align:right;font-size:12px;font-weight:800\">${Math.round(q.tot)}m</span></div>`}).join('')}</div>`}))}"></div>`).join('')}</div>
+      <div class="an-seglab">${parts.map(([n,c,v])=>`<div><i style="background:${c}"></i>${n}<b>${Math.round(v)} min</b></div>`).join('')}</div>`,
+      ins:{h:`For every minute under tension you rested ${(R/L).toFixed(1)} minutes.`,facts:[[L.toFixed(1)+' min','lifting a session'],[R.toFixed(1)+' min','resting between sets']],p:['Lifting is time under tension from the set timer. Resting is the rest timer between sets. Other is warming up, moving between stations and setting up.'],n:'last 12 sessions'}}}},
+  prog:{tab:'overview',perLift:1,name:'Estimated max',desc:'Your best set each month, as a one-rep max',hex:null,make(){
+    const rows=exSets();const mo={};rows.forEach(r=>{const m=monthIdx(r.start);mo[m]=Math.max(mo[m]||0,r.e1)});const pts=Object.entries(mo).map(([m,y])=>({x:+m,y})).sort((a,b)=>a.x-b.x);
+    let run=0,prs=0;const bySess={};rows.forEach(r=>bySess[r.si]=Math.max(bySess[r.si]||0,r.e1));Object.keys(bySess).sort((a,b)=>a-b).forEach(k=>{if(bySess[k]>run){if(run)prs++;run=bySess[k]}});
+    const best=pts.reduce((a,b)=>b.y>a.y?b:a,pts[0]);const f=pts[0],l=pts[pts.length-1];
+    return{k:'ESTIMATED MAX',h:`${l.y.toFixed(1)} ${U()} <span>${l.y>=f.y?'↑':'↓'}${Math.abs((l.y/f.y-1)*100).toFixed(0)}%</span>`,ht:140,series:[{pts,tip:p=>`<b>${monthName(p.x)}</b><br>best set ≈ ${p.y.toFixed(1)} ${U()} one-rep max`,drill:p=>{const rr=rows.filter(r=>monthIdx(r.start)===p.x);const by={};rr.forEach(r=>{if(!by[r.si]||r.e1>by[r.si].e1)by[r.si]=r});const q=Object.values(by).map(r=>({x:new Date(r.start).getDate(),y:r.e1,r}));const b=q.reduce((a,c)=>c.y>a.y?c:a,q[0]);
+      return{k:ex.toUpperCase(),h:`${monthName(p.x)}: ${q.length} sessions`,chart:{series:[{pts:q,tip:t=>`<b>${fmtDay(t.r.start)}</b><br>${t.r.w} ${U()} × ${t.r.r} ≈ ${t.y.toFixed(1)} ${U()}`}],xr:[1,31],xt:[1,10,20,31],xfmt:v=>v,yfmt:v=>Math.round(v),ht:150,crit:[{p:b,label:'Best'}]},rows:q.sort((a,c)=>a.r.start-c.r.start).map(t=>[fmtDay(t.r.start),`${t.r.w} ${U()} × ${t.r.r}`,t.y.toFixed(1)+' '+U()])}}}],
+      xr:[f.x,l.x],xt:[f.x,Math.round((f.x+l.x)/2),l.x],xfmt:i=>monthName(i),yfmt:v=>Math.round(v),crit:[{p:best,label:'PR'}],
+      ins:{h:`Your best ${ex} set this month works out to about ${l.y.toFixed(1)} ${U()} for one rep, ${l.y>=f.y?'up':'down'} ${Math.abs(l.y-f.y).toFixed(1)} ${U()} from ${monthName(f.x)}.`,facts:[[best.y.toFixed(1)+' '+U(),'highest, in '+monthName(best.x)],[prs,'times you beat your previous best']],p:['Each point is your strongest set that month, turned into a one-rep max with the Epley formula (weight × (1 + reps ÷ 30)).'],n:rows.length+' sets of '+ex}}}},
+  rate:{tab:'overview',perLift:1,name:'Rate of gain',desc:'How many kg a month you\'re adding, and whether it\'s slowing',hex:'#199e70',make(){
+    const mb=monthlyBest(ex);const pts=[];for(let i=2;i<mb.length;i++){const w=mb.slice(i-2,i+1);pts.push({x:mb[i].x,y:slope(w),w})}
+    if(pts.length<2)return{k:'RATE OF GAIN',h:'Rate of gain',series:[]};const l=pts[pts.length-1],f=pts[0];const overall=slope(mb);const fast=pts.reduce((a,b)=>b.y>a.y?b:a,pts[0]);
+    const trend=l.y<overall-.25?'slowing':l.y>overall+.25?'speeding up':'steady';
+    return{k:'RATE OF GAIN',h:`${l.y>=0?'+':''}${l.y.toFixed(1)} ${U()} a month <span>${trend}</span>`,ht:150,series:[{col:'#199e70',pts,tip:p=>`<b>3 months to ${monthName(p.x)}</b><br>${p.y>=0?'+':''}${p.y.toFixed(1)} ${U()} a month`,drill:p=>({k:'RATE OF GAIN',h:`${monthName(p.w[0].x)} to ${monthName(p.x)}: ${p.y>=0?'+':''}${p.y.toFixed(1)} ${U()} a month`,chart:{series:[{col:LCOL[ex],pts:p.w,tip:q=>`<b>${monthName(q.x)}</b><br>${q.r.w} ${U()} × ${q.r.r} ≈ ${q.y.toFixed(1)} ${U()}`}],xr:[p.w[0].x-.3,p.w[2].x+.3],xt:p.w.map(q=>q.x),xfmt:i=>monthName(Math.round(i)),yfmt:v=>v%1?v.toFixed(1):v,ht:140},p:['The rate is the slope of a straight line through these three monthly bests.']})}],
+      xr:[f.x,l.x],xt:[f.x,Math.round((f.x+l.x)/2),l.x],xfmt:i=>monthName(i),yfmt:v=>(v>0?'+':'')+v.toFixed(1),crit:[{p:fast,label:'Fastest'}],
+      ins:{h:`Over the last 3 months your ${ex} gained ${l.y.toFixed(1)} ${U()} a month, ${trend==='steady'?'about the same as':trend==='slowing'?'slower than':'faster than'} your year average of ${overall.toFixed(1)}.`,facts:[[(fast.y>=0?'+':'')+fast.y.toFixed(1)+' '+U(),`a month, your fastest stretch (to ${monthName(fast.x)})`],[(overall>=0?'+':'')+overall.toFixed(1)+' '+U(),'a month across the year']],
+        p:['Each point is the slope through that month\'s best set and the two months before it, in kg of estimated one-rep max per month. Tap a point to see the three months behind it.'],n:mb.length+' monthly bests of '+ex}}}},
+  lifts:{tab:'overview',name:'Lift progress',desc:'Every lift, first month against last month',hex:'#c98500',make(){
+    const rows=LIFTS.map(n=>{const R=SETS.filter(r=>r.ex===n);const t0=R[0].start,t1=R[R.length-1].start;const a=Math.max(...R.filter(r=>r.start<t0+30*DAY).map(r=>r.e1)),b=Math.max(...R.filter(r=>r.start>t1-30*DAY).map(r=>r.e1));return{n,a,b,g:(b/a-1)*100}});
+    const top=rows.reduce((x,y)=>y.g>x.g?y:x,rows[0]);const up=rows.filter(r=>r.g>0).length;rows.sort((a,b)=>b.g-a.g);
+    const short=n=>{let t=n.replace('Romanian Deadlift','Romanian DL');if(t.length>16)t=t.replace(/Barbell/g,'BB').replace(/Dumbbell/g,'DB').replace(/^(Standing|Seated|Lying) /,'');return t.length>18?t.slice(0,17)+'…':t};
+    const gmin=Math.min(0,...rows.map(r=>r.g)),gmax=Math.max(...rows.map(r=>r.g));const ticks=nice(gmin,gmax,3);const lo=ticks[0],hi=ticks[ticks.length-1];
+    const H=rows.length*30+24,pl=112,pr=40,X=v=>pl+(v-lo)/(hi-lo)*(W-pl-pr);let o=`<svg class="ch" viewBox="0 0 ${W} ${H}">`;
+    ticks.forEach(v=>o+=`<line x1="${X(v)}" x2="${X(v)}" y1="4" y2="${H-18}" stroke="#262624"/><text x="${X(v)}" y="${H-4}" text-anchor="middle" font-size="10" font-weight="600" fill="#8a8980">${v}%</text>`);
+    rows.forEach((r,k)=>{const y=14+k*30;o+=`<text x="0" y="${y+4}" font-size="12" font-weight="800" fill="#c3c2b7">${short(r.n)}</text><line x1="${X(0)}" x2="${X(r.g)}" y1="${y}" y2="${y}" stroke="rgba(240,239,236,.6)" stroke-width="1.4"/>`+mark(X(r.g),y,'c',LCOL[r.n],r===top?6.8:5.2);
+      o+=`<text x="${X(r.g)+(r===top?12:10)}" y="${y+4}" font-size="11" font-weight="${r===top?900:700}" fill="${r===top?'#f0efec':'#8a8980'}">${(r.g>=0?'+':'')+r.g.toFixed(0)}%</text>`;
+      const dk=regDrill(()=>liftHistory(r.n));o+=`<circle cx="${X(r.g)}" cy="${y}" r="14" fill="transparent" data-tip="<b>${r.n}</b><br>${r.a.toFixed(1)} → ${r.b.toFixed(1)} ${U()} one-rep max<br><small>Tap for its full history</small>" data-drill="${dk}"/><rect x="0" y="${y-12}" width="${pl-6}" height="24" fill="transparent" data-drill="${dk}" style="cursor:pointer"/>`});
+    o+='</svg>';
+    return{k:'LIFT PROGRESS',h:`${top.n} ${top.g>=0?'up':'down'} ${Math.abs(top.g).toFixed(0)}%`,custom:o,
+      ins:{h:`${up} of ${rows.length} lifts are stronger than in your first month. ${top.n} gained the most.`,facts:[[(top.g>=0?'+':'')+top.g.toFixed(1)+'%',top.n],[(slope(monthlyBest(top.n))>=0?'+':'')+slope(monthlyBest(top.n)).toFixed(1)+' '+U(),`a month on ${top.n}`]],p:['Each line is the change in your best set from your first 30 days to your last 30, both as Epley one-rep maxes. Tap a point for the kilos.'],n:LIFTS.length+' main lifts'}}}},
+  muscle:{tab:'overview',name:'Weekly sets',desc:'Sets per muscle each week, last 4 weeks',hex:'#d55181',make(){
+    const R=SETS.filter(r=>r.start>NOW-28*DAY);const c={};R.forEach(r=>c[r.group]=(c[r.group]||0)+1);const seen=new Set(SETS.map(r=>r.group));const M=Object.keys(GCOL).filter(g=>seen.has(g)).map(g=>[g,(c[g]||0)/4]);const low=M.reduce((a,b)=>b[1]<a[1]?b:a,M[0]);
+    const mx=Math.max(24,...M.map(m=>m[1]));const H=M.length*30+22,pl=78,pr=14,X=v=>pl+v/mx*(W-pl-pr);
+    let o=`<svg class="ch" viewBox="0 0 ${W} ${H}"><rect x="${X(10)}" y="2" width="${X(20)-X(10)}" height="${H-20}" rx="8" fill="rgba(240,239,236,.06)"/>`;
+    [0,10,20].forEach(v=>o+=`<text x="${X(v)}" y="${H-4}" text-anchor="middle" font-size="10" font-weight="600" fill="#8a8980">${v}</text>`);
+    M.forEach(([n,v],k)=>{const y=14+k*30;o+=`<text x="0" y="${y+4}" font-size="12.5" font-weight="800" fill="#c3c2b7">${n}</text><line x1="${X(0)}" x2="${X(v)}" y1="${y}" y2="${y}" stroke="rgba(240,239,236,.35)" stroke-width="1.4"/>`+mark(X(v),y,'c',GCOL[n],n===low[0]?6.8:5.2);
+      if(n===low[0])o+=`<rect x="${X(v)+12}" y="${y-9}" width="34" height="18" rx="9" fill="#f0efec"/><text x="${X(v)+29}" y="${y+4}" text-anchor="middle" font-size="10.5" font-weight="900" fill="#0e0e0e">Low</text>`;
+      o+=`<circle cx="${X(v)}" cy="${y}" r="13" fill="transparent" data-tip="<b>${n}</b><br>${v.toFixed(1)} sets a week<br><small>Tap to see which exercises</small>" data-drill="${regDrill(()=>{const by={};R.filter(r=>r.group===n).forEach(r=>by[r.ex]=(by[r.ex]||0)+1);return{k:'WEEKLY SETS',h:`${n}: ${v.toFixed(1)} sets a week`,rows:Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([e,c])=>[e,c+' sets in 4 weeks',(c/4).toFixed(1)+' a week'])}})}"/>`});
+    const under=M.filter(m=>m[1]<10).map(m=>m[0]);
+    return{k:'WEEKLY SETS',h:`${low[0]}: ${low[1].toFixed(1)} a week`,custom:o+'</svg>',
+      ins:{h:under.length===M.length?'Every muscle is under 10 sets a week.':under.length?`${under.join(', ')} ${under.length>1?'are':'is'} under 10 sets a week.`:'Every muscle gets 10 or more sets a week.',facts:M.slice().sort((a,b)=>b[1]-a[1]).slice(0,2).map(m=>[m[1].toFixed(1),m[0]+' sets a week']),p:['Counted from every logged set in the last 4 weeks, grouped by the muscle each exercise mainly works. The shaded band marks 10 to 20 sets a week, a common target range.'],n:R.length+' sets'}}}},
+  tens:{tab:'advanced',perLift:1,name:'Holding heavy',desc:'Longest you\'ve held each weight, early on vs lately',hex:'#c98500',make(){
+    const R=exT();const t0=R[0].start,t1=R[R.length-1].start,span=t1-t0;
+    const edge=xs=>{const by={};xs.forEach(r=>{if(!by[r.w]||r.tut>by[r.w])by[r.w]=r.tut});let mx=-1;return Object.entries(by).map(([w,t])=>({x:t,y:+w})).sort((a,b)=>b.y-a.y).filter(p=>{if(p.x>mx){mx=p.x;return true}return false}).sort((a,b)=>a.y-b.y)};
+    const a=edge(R.filter(r=>r.start<t0+span*.33)),b=edge(R.filter(r=>r.start>t1-span*.33));
+    const common=b.map(p=>{const q=R.filter(r=>r.start<t0+span*.33&&r.w===p.y);return q.length?{p,then:Math.max(...q.map(r=>r.tut))}:null}).filter(Boolean).sort((x,y)=>y.p.y-x.p.y);const g=common[0];
+    return{k:'TIME UNDER TENSION',h:g?`${g.p.y} ${U()}: ${Math.round(g.then)}s → ${Math.round(g.p.x)}s`:'Holding heavy',ht:180,series:[{name:'Early on',col:S2,shape:'s',dash:true,pts:a,tip:p=>`<b>Early on</b> · ${p.y} ${U()}<br>held up to ${Math.round(p.x)}s`,drill:p=>atWeight(p.y)},{name:'Lately',col:S1,pts:b,tip:p=>`<b>Lately</b> · ${p.y} ${U()}<br>held up to ${Math.round(p.x)}s`,drill:p=>atWeight(p.y)}],
+      xfmt:v=>v+'s',yfmt:v=>Math.round(v),crit:g?[{p:g.p,label:(g.p.x-g.then>=0?'+':'')+Math.round(g.p.x-g.then)+'s'}]:[],
+      ins:{h:g?`At ${g.p.y} ${U()} you've lately held a set for up to ${Math.round(g.p.x)}s, against ${Math.round(g.then)}s early on.`:'Not enough repeated weights to compare yet.',facts:[[a.length?Math.max(...a.map(p=>p.y))+' '+U():'–','heaviest weight early on'],[b.length?Math.max(...b.map(p=>p.y))+' '+U():'–','heaviest weight lately']],p:['Each line is the longest time you\'ve held each weight, using only weights where nothing heavier was held longer. Early on is your first third of the year, lately is your last third.'],n:R.length+' sets of '+ex}}}},
+  len:{tab:'advanced',perLift:1,name:'Set length',desc:'Strength by how long the set lasts',hex:'#199e70',make(){
+    const R=exT();const all=bins(R.map(r=>({x:r.tut,y:r.rel})),5,10,10,8);const l1=bins(R.filter(r=>r.set===1).map(r=>({x:r.tut,y:r.rel})),5,10,10,4),l2=bins(R.filter(r=>r.set>=2).map(r=>({x:r.tut,y:r.rel})),5,10,10,4);
+    const solid=all.filter(p=>p.n>=10);if(!solid.length)return{k:'SET LENGTH',h:'Set length',series:[]};
+    const best=solid.reduce((a,b)=>b.y>a.y?b:a,solid[0]);let i=all.indexOf(best),a=i,b=i;while(a>0&&all[a-1].n>=10&&all[a-1].y>=best.y-1)a--;while(b<all.length-1&&all[b+1].n>=10&&all[b+1].y>=best.y-1)b++;
+    const lo=all[a].lo,hi=all[b].hi;const inB=R.filter(r=>r.tut>=lo&&r.tut<hi),past=R.filter(r=>r.tut>=hi);const after=R.filter(r=>r.tut>=lo);const rho=spearman(after.map(r=>r.tut),after.map(r=>r.rel));
+    const crit1=l1.length?l1.reduce((x,y)=>Math.abs(y.x-best.x)<Math.abs(x.x-best.x)?y:x,l1[0]):null;
+    return{k:'SET LENGTH',h:`Strongest at ${lo}–${hi}s`,series:[{name:'Set 1',col:S1,pts:l1,tip:p=>`<b>Set 1</b> · ${p.lo}–${p.hi}s<br>${p.y.toFixed(1)}% of your recent best · ${p.n} sets`,drill:p=>rawDrill('SET LENGTH · SET 1',S1,R.map(r=>({x:r.tut,y:r.rel,t:r.start,w:r.w,r:r.r,s:r.set})),q=>q.s===1&&q.x>=p.lo&&q.x<p.hi,v=>Math.round(v)+'s',v=>v.toFixed(0)+'%',`on set 1 lasting ${p.lo}–${p.hi}s`)},{name:'Set 2+',col:S3,shape:'t',pts:l2,tip:p=>`<b>Set 2+</b> · ${p.lo}–${p.hi}s<br>${p.y.toFixed(1)}% of your recent best · ${p.n} sets`,drill:p=>rawDrill('SET LENGTH · SET 2+',S3,R.map(r=>({x:r.tut,y:r.rel,t:r.start,w:r.w,r:r.r,s:r.set})),q=>q.s>=2&&q.x>=p.lo&&q.x<p.hi,v=>Math.round(v)+'s',v=>v.toFixed(0)+'%',`on set 2+ lasting ${p.lo}–${p.hi}s`)}],
+      xfmt:v=>v+'s',yfmt:v=>v+'%',band:[lo,hi],crit:crit1?[{p:crit1,label:'Best range'}]:[],
+      ins:{h:`Your sets lasting ${lo}–${hi}s averaged ${avg(inB.map(r=>r.rel)).toFixed(1)}% of your recent best.`+(past.length>=8?` Sets of ${hi}s or longer averaged ${avg(past.map(r=>r.rel)).toFixed(1)}%.`:` You rarely go longer than ${hi}s.`),
+        facts:[[avg(inB.map(r=>r.rel)).toFixed(1)+'%',`in ${lo}–${hi}s (${inB.length} sets)`],[(avg(R.filter(r=>r.set===1).map(r=>r.rel))-avg(R.filter(r=>r.set>=2).map(r=>r.rel))).toFixed(1)+' pts','lower on set 2+ than set 1']],
+        p:[`From ${lo}s on, longer sets show ${linkWord(rho)} ${rho<0?'downward':'upward'} link with strength (ρ = ${rho.toFixed(2)}).`,'Strength here is each set\'s one-rep max as a share of your best on this lift within 3 weeks either side, so it isn\'t thrown off by getting stronger over the year.'],n:R.length+' sets of '+ex}}}},
+  rest:{tab:'advanced',perLift:1,name:'Rest',desc:'Reps you keep by how long you rest',hex:'#e66767',make(){
+    const R=exSets().filter(r=>r.rest!=null&&r.prevW===r.w&&r.prevR>=4).map(r=>({x:r.rest,y:r.r/r.prevR*100,set:r.set,t:r.start,w:r.w,r:r.r}));
+    const rd=(lab,col,f)=>p=>rawDrill('REST · '+lab.toUpperCase(),col,R,q=>f(q)&&q.x>=p.lo&&q.x<p.hi,v=>mmss(v),v=>v.toFixed(0)+'%',`on ${lab.toLowerCase()} after ${mmss(p.lo)}–${mmss(p.hi)} rest`);
+    const a=bins(R.filter(r=>r.set===2),30,30,8),b=bins(R.filter(r=>r.set>=3),30,30,8);if(!a.length)return{k:'REST',h:'Rest',series:[]};
+    const full=a.find(p=>p.y>=95)||a.reduce((x,y)=>y.y>x.y?y:x,a[0]);const rho=spearman(R.map(r=>r.x),R.map(r=>r.y));const short=a[0];
+    return{k:'REST',h:`${Math.round(full.y)}% of reps back by ${mmss(full.hi)}`,series:[{name:'Set 2',col:S2,shape:'s',pts:a,tip:p=>`<b>Set 2</b> after ${mmss(p.lo)}–${mmss(p.hi)}<br>kept ${p.y.toFixed(0)}% of your reps · ${p.n} sets`,drill:rd('Set 2',S2,q=>q.set===2)},{name:'Set 3+',col:S3,shape:'t',pts:b,tip:p=>`<b>Set 3+</b> after ${mmss(p.lo)}–${mmss(p.hi)}<br>kept ${p.y.toFixed(0)}% of your reps · ${p.n} sets`,drill:rd('Set 3+',S3,q=>q.set>=3)}],
+      xfmt:v=>mmss(v),yfmt:v=>v+'%',crit:[{p:full,label:mmss(full.hi)}],
+      ins:{h:`After ${mmss(short.lo)}–${mmss(short.hi)} of rest you kept ${short.y.toFixed(0)}% of your reps. After ${mmss(full.lo)}–${mmss(full.hi)}, ${full.y.toFixed(0)}%.`,facts:[[short.y.toFixed(0)+'%',`reps kept after ${mmss(short.hi)} or less`],[full.y.toFixed(0)+'%',`reps kept after ${mmss(full.lo)}–${mmss(full.hi)}`]],
+        p:[`Longer rest shows ${linkWord(rho)} link with keeping your reps (ρ = ${rho.toFixed(2)}).`,'Each set is compared with the set before it at the same weight, so a change in weight never counts as lost reps.'],n:R.length+' set pairs of '+ex}}}},
+  tempo:{tab:'advanced',perLift:1,name:'Tempo',desc:'Seconds per rep against strength',hex:'#9085e9',make(){
+    const R=exT().filter(r=>r.set===1);const pts=qbins(R.map(r=>({x:r.pace,y:r.rel})),7);if(!pts.length)return{k:'TEMPO',h:'Tempo',series:[]};const best=pts.reduce((a,b)=>b.y>a.y?b:a,pts[0]);const rho=spearman(R.map(r=>r.pace),R.map(r=>r.rel));
+    return{k:'TEMPO',h:`Best around ${best.x.toFixed(1)}s a rep`,ht:150,series:[{pts,tip:p=>`<b>${p.lo.toFixed(1)}–${p.hi.toFixed(1)}s per rep</b><br>${p.y.toFixed(1)}% of your recent best · ${p.n} sets`,drill:p=>rawDrill('TEMPO',LCOL[ex],R.map(r=>({x:r.pace,y:r.rel,t:r.start,w:r.w,r:r.r})),q=>q.x>=p.lo&&q.x<=p.hi,v=>v.toFixed(1)+'s',v=>v.toFixed(0)+'%',`at ${p.lo.toFixed(1)}–${p.hi.toFixed(1)}s a rep`)}],xfmt:v=>v.toFixed(1)+'s',yfmt:v=>v+'%',crit:[{p:best,label:'Best'}],
+      ins:{h:`First sets at ${best.lo.toFixed(1)}–${best.hi.toFixed(1)}s a rep averaged ${best.y.toFixed(1)}% of your recent best.`,facts:[[best.y.toFixed(1)+'%','at your best pace'],[pts[pts.length-1].y.toFixed(1)+'%','at your slowest pace']],p:[`Pace shows ${linkWord(rho)} link with strength overall (ρ = ${rho.toFixed(2)}).`,'Pace is time under tension divided by reps. First sets only.'],n:R.length+' first sets'}}}},
+  gap:{tab:'advanced',perLift:1,name:'Days off',desc:'Strength by days since your last session',hex:'#d95926',make(){
+    const R=exSets().filter(r=>r.set===1&&r.gapD!=null);const G=[[1,1,'1 day'],[2,3,'2–3 days'],[4,6,'4–6 days'],[7,99,'7+ days']].map(([a,b,l],i)=>{const xs=R.filter(r=>r.gapD>=a&&r.gapD<=b);return{x:i,y:avg(xs.map(r=>r.rel)),n:xs.length,l}}).filter(p=>p.n>=3);
+    if(!G.length)return{k:'DAYS OFF',h:'Days off',series:[]};const best=G.reduce((a,b)=>b.y>a.y?b:a,G[0]),worst=G.reduce((a,b)=>b.y<a.y?b:a,G[0]);
+    return{k:'DAYS OFF',h:`Strongest after ${best.l} off`,ht:150,series:[{pts:G,tip:p=>`<b>${p.l} off</b><br>${p.y.toFixed(1)}% of your recent best · ${p.n} sessions`,drill:p=>{const rng={'1 day':[1,1],'2–3 days':[2,3],'4–6 days':[4,6],'7+ days':[7,99]}[p.l];const xs=R.filter(r=>r.gapD>=rng[0]&&r.gapD<=rng[1]);return{k:'DAYS OFF',h:`${xs.length} sessions after ${p.l} off`,rows:xs.map(r=>[fmtDay(r.start),`${r.w} ${U()} × ${r.r}`,r.rel.toFixed(0)+'%'])}}}],xr:[-.4,G.length-.6],xt:G.map(p=>p.x),xfmt:i=>(G.find(p=>p.x===i)||{}).l||'',yfmt:v=>v+'%',crit:[{p:best,label:'Best'}],
+      ins:{h:`After ${best.l} off your first set averaged ${best.y.toFixed(1)}% of your recent best, against ${worst.y.toFixed(1)}% after ${worst.l} off.`,facts:[[best.y.toFixed(1)+'%',`after ${best.l} (${best.n} sessions)`],[worst.y.toFixed(1)+'%',`after ${worst.l} (${worst.n} sessions)`]],p:['Days off counts calendar days since your previous session of any kind. First sets only.'],n:R.length+' sessions with '+ex}}}},
+  tod:{tab:'advanced',perLift:1,name:'Time of day',desc:'Strength by the hour you start',hex:'#d55181',make(){
+    const R=exSets().filter(r=>r.set===1);const pts=bins(R.map(r=>({x:r.hour,y:r.rel})),5,3,6,3);if(pts.length<2)return{k:'TIME OF DAY',h:'Time of day',series:[]};const best=pts.reduce((a,b)=>b.y>a.y?b:a,pts[0]),worst=pts.reduce((a,b)=>b.y<a.y?b:a,pts[0]);
+    return{k:'TIME OF DAY',h:`Strongest ${hh(best.lo)}–${hh(best.hi)}`,ht:150,series:[{pts,tip:p=>`<b>${hh(p.lo)} to ${hh(p.hi)}</b><br>${p.y.toFixed(1)}% of your recent best · ${p.n} sessions`,drill:p=>rawDrill('TIME OF DAY',LCOL[ex],R.map(r=>({x:r.hour,y:r.rel,t:r.start,w:r.w,r:r.r})),q=>q.x>=p.lo&&q.x<p.hi,v=>hh(v),v=>v.toFixed(0)+'%',`starting ${hh(p.lo)}–${hh(p.hi)}`)}],xr:[5,23],xt:[6,9,12,15,18,21],xfmt:v=>hh(v),yfmt:v=>v+'%',crit:[{p:best,label:'Peak'}],
+      ins:{h:`Sessions starting ${hh(best.lo)}–${hh(best.hi)} averaged ${best.y.toFixed(1)}%, against ${worst.y.toFixed(1)}% for ${hh(worst.lo)}–${hh(worst.hi)}.`,facts:[[pts.reduce((a,p)=>p.n>a.n?p:a,pts[0]).n,`sessions at ${hh(pts.reduce((a,p)=>p.n>a.n?p:a,pts[0]).lo)}–${hh(pts.reduce((a,p)=>p.n>a.n?p:a,pts[0]).hi)}, your usual time`],[(best.y-worst.y).toFixed(1)+' pts','between best and worst windows']],p:['Windows with fewer than 3 sessions are left out. First sets only.'],n:R.length+' sessions with '+ex}}}},
+};
+/* ---- custom chart: pick any two measures ---- */
+const MET={
+  tut:{l:'Time under tension',u:'s',get:r=>r.tut>0?r.tut:null,fmt:v=>Math.round(v)+'s'},
+  rest:{l:'Rest before set',u:'',get:r=>r.rest,fmt:v=>mmss(v)},
+  pace:{l:'Seconds per rep',u:'s',get:r=>r.tut>0?r.pace:null,fmt:v=>v.toFixed(1)+'s'},
+  w:{l:'Weight',u:'kg',get:r=>r.w,fmt:v=>Math.round(v)+' '+U()},
+  load:{l:'Load (% of best)',u:'%',get:r=>r.load,fmt:v=>Math.round(v)+'%'},
+  r:{l:'Reps',u:'',get:r=>r.r,fmt:v=>v.toFixed(v<20&&v%1?1:0)},
+  kept:{l:'Reps kept',u:'%',get:r=>r.prevR&&r.prevW===r.w?r.r/r.prevR*100:null,fmt:v=>Math.round(v)+'%'},
+  set:{l:'Set number',u:'',get:r=>r.set,fmt:v=>'Set '+Math.round(v)},
+  rel:{l:'Strength (% of best)',u:'%',get:r=>r.rel,fmt:v=>v.toFixed(0)+'%'},
+  e1:{l:'Estimated max',u:'kg',get:r=>r.e1,fmt:v=>Math.round(v)+' '+U()},
+  gapD:{l:'Days since last session',u:'d',get:r=>r.set===1?r.gapD:null,fmt:v=>v.toFixed(v%1?1:0)+'d'},
+  hour:{l:'Hour of day',u:'',get:r=>r.set===1?r.hour:null,fmt:v=>hh(v)},
+  week:{l:'Weeks',u:'',get:r=>(r.start-HIST[0].start)/DAY/7+1,fmt:v=>'Wk '+Math.round(v)},
+  restT:{l:'Rest taken',u:'',get:r=>r.rest,fmt:v=>mmss(v)},
+};
+// only pairings that tell you something you can act on
+const ALLOWED={week:['e1','tut','restT','pace'],tut:['rel'],rest:['kept','rel'],pace:['rel','r'],load:['r','tut','rel'],set:['r','rel','tut'],gapD:['rel'],hour:['rel']};
+const XM=Object.keys(ALLOWED);
+function customMake(xk,yk){if(!ALLOWED[xk])xk='rest';if(!ALLOWED[xk].includes(yk))yk=ALLOWED[xk][0];const X=MET[xk],Y=MET[yk];
+  const raw=exSets().map(r=>({x:X.get(r),y:Y.get(r),t:r.start,w:r.w,r:r.r})).filter(p=>p.x!=null&&p.y!=null&&isFinite(p.x)&&isFinite(p.y));
+  let pts;const timeline=xk==='week';
+  if(timeline&&yk==='e1'){const by={};raw.forEach(p=>{const k=Math.floor(p.x);if(!by[k]||p.y>by[k].y)by[k]={x:k+.5,lo:k,hi:k+1,y:p.y,n:0}});raw.forEach(p=>{const b=by[Math.floor(p.x)];if(b)b.n++});pts=Object.values(by).sort((a,b)=>a.x-b.x)}
+  else if(timeline)pts=bins(raw,1,4,14,3);
+  else{const distinct=new Set(raw.map(p=>p.x)).size;pts=distinct<=8?[...new Set(raw.map(p=>p.x))].sort((a,b)=>a-b).map(x=>{const ys=raw.filter(p=>p.x===x).map(p=>p.y);return{x,lo:x,hi:x,y:avg(ys),n:ys.length}}).filter(p=>p.n>=3):qbins(raw,8)}
+  const src=timeline&&yk==='e1'?pts:raw;const rho=src.length>8?spearman(src.map(p=>p.x),src.map(p=>p.y)):0;const best=pts.length?pts.reduce((a,b)=>b.y>a.y?b:a,pts[0]):null;
+  const perMonth=timeline?slope(pts)*4.345:null;
+  const h=timeline?(yk==='e1'?`${perMonth>=0?'+':''}${perMonth.toFixed(1)} ${U()} a month`:`${Y.l} ${Math.abs(rho)<.1?'held steady':rho>0?'went up':'went down'} over the year`):Math.abs(rho)<.1?'No clear link':`${Y.l} ${rho>0?'rises':'falls'} with ${X.l.toLowerCase()}`;
+  const rng=p=>timeline?(p.hi-p.lo>1?`Weeks ${p.lo}–${p.hi}`:`Week ${p.lo}`):p.lo===p.hi?X.fmt(p.lo):X.fmt(p.lo)+'–'+X.fmt(p.hi);
+  return{k:'CUSTOM',h,series:[{pts,tip:p=>`<b>${rng(p)}</b><br>${Y.l}: ${Y.fmt(p.y)} · ${p.n} sets`,drill:p=>rawDrill('CUSTOM · '+rng(p).toUpperCase(),LCOL[ex],raw,q=>timeline?(q.x>=p.lo&&q.x<p.hi):p.lo===p.hi?q.x===p.x:(q.x>=p.lo&&q.x<=p.hi),X.fmt,Y.fmt,(timeline?'in ':'at ')+rng(p).toLowerCase())}],
+    xfmt:v=>X.fmt(v),yfmt:v=>Y.fmt(v),crit:best?[{p:best,label:timeline&&yk==='e1'?'Best':'High'}]:[],xk,yk,
+    ins:{h:timeline?(yk==='e1'?`Your ${ex} estimated max has moved ${perMonth>=0?'up':'down'} about ${Math.abs(perMonth).toFixed(1)} ${U()} a month this year.`:`Across the year, your ${Y.l.toLowerCase()} on ${ex} ${Math.abs(rho)<.1?'stayed about the same':rho>0?'went up':'went down'}.`)
+      :Math.abs(rho)<.1?`In your ${ex} sets, ${X.l.toLowerCase()} and ${Y.l.toLowerCase()} don't move together.`:`In your ${ex} sets, ${Y.l.toLowerCase()} tends to ${rho>0?'rise':'fall'} as ${X.l.toLowerCase()} goes up. The link is ${linkWord(rho).replace('a ','')}.`,
+      facts:[[timeline&&yk==='e1'?(perMonth>=0?'+':'')+perMonth.toFixed(1)+' '+U():rho.toFixed(2),timeline&&yk==='e1'?'a month, from a straight line through your weekly bests':'rank correlation (ρ), from −1 to 1'],[best?Y.fmt(best.y):'–',best?'highest, '+rng(best).toLowerCase():'']],
+      p:[timeline?'Points are your weekly bests (or 4-week averages). Tap one to see the sets.':'Points are averages of groups of sets. Tap one to see the sets behind it. A link doesn\'t prove one causes the other.'],n:raw.length+' sets of '+ex}}}
+
+
+const timedEx=()=>exSets().filter(r=>r.tut>0);
+const NEEDS={
+  consist:()=>[HIST.length,1,'workout'],
+  gymtime:()=>[new Set(HIST.map(S=>monthIdx(S.start))).size,2,'month of workouts'],
+  split:()=>[HIST.slice(-12).filter(S=>S.ex.some(E=>(E.sets||[]).some(s=>s.tut>0))).length,1,'timed workout'],
+  prog:()=>[monthlyBest(ex).length,2,'month of '+ex],
+  rate:()=>[monthlyBest(ex).length,4,'month of '+ex],
+  lifts:()=>[LIFTS.filter(n=>monthlyBest(n).length>=2).length,1,'lift logged across two months'],
+  muscle:()=>[SETS.filter(r=>r.start>NOW-28*DAY).length,10,'set in the last 4 weeks'],
+  tens:()=>[timedEx().length,20,'timed set of '+ex],
+  len:()=>[timedEx().length,30,'timed set of '+ex],
+  rest:()=>[exSets().filter(r=>r.rest!=null&&r.prevW===r.w&&r.prevR>=4).length,15,'timed rest on '+ex],
+  tempo:()=>[timedEx().filter(r=>r.set===1).length,15,'timed first set of '+ex],
+  gap:()=>[exSets().filter(r=>r.set===1&&r.gapD!=null).length,12,'session with '+ex],
+  tod:()=>[exSets().filter(r=>r.set===1).length,12,'session with '+ex],
+  custom:()=>[timedEx().length,20,'timed set of '+ex],
+};
+const plural=(n,w)=>n===1?w:w.replace(/^(\w+)/,m=>m.endsWith('h')||m.endsWith('s')?m+'es':m+'s');
+
+function lockHTML(id,acc){const [have,need,unit]=(NEEDS[id.startsWith('custom')?'custom':id]||(()=>[1,1,'']))();if(have>=need)return null;
+  const name=id.startsWith('custom')?'Custom chart':CARDS[id].name;const left=need-have;
+  return `<div class="an-card" data-lock="1"><span class="an-bar" style="background:${acc}"></span>${edit?`<div class="an-ctl"><button data-up="${id}" aria-label="Move up">↑</button><button data-rm="${id}" aria-label="Remove">×</button></div>`:''}<div class="an-k" style="color:${acc}">${name.toUpperCase()}</div>
+    <div class="an-lock" style="margin-top:10px"><b>Fills in after ${left} more ${plural(left,unit)}</b><span>${have} of ${need} so far</span><div class="an-pb"><i style="width:${Math.min(100,have/need*100)}%"></i></div></div></div>`}
+function cardHTML(id){const isC=id.startsWith('custom');const D=isC?{hex:'#f0efec'}:CARDS[id];if(!D)return'';const acc=isC?'#f0efec':(D.hex||LCOL[ex]);
+  if(!isC&&D.perLift&&!ex)return'';const lk=lockHTML(id,acc);if(lk)return lk;
+  let c;try{c=isC?customMake(...id.split(':').slice(1)):D.make()}catch(err){console.error(err);return ''}
+  const ctl=edit?`<div class="an-ctl"><button data-up="${id}" aria-label="Move up">↑</button><button data-rm="${id}" aria-label="Remove">×</button></div>`:`<span class="an-more">i</span>`;
+  const axes=isC?`<div class="an-axes"><button data-ax="x" data-id="${id}"><small>X</small>${MET[c.xk].l} ▾</button><button data-ax="y" data-id="${id}"><small>Y</small>${MET[c.yk].l} ▾</button></div>`:'';
+  const pill=!isC&&D.perLift&&tab==='overview'&&LIFTS.length>1?`<button class="an-lp" data-lp><i style="background:${LCOL[ex]}"></i>${esc(ex)} ▾</button>`:'';
+  return `<div class="an-card${edit?' ed':''}" data-card="${id}"><span class="an-bar" style="background:${acc}"></span>${ctl}<div class="an-krow"><div class="an-k" style="color:${acc}">${c.k}</div>${pill}</div><h3>${c.h}</h3>${axes}${c.custom||chart(c,isC?LCOL[ex]:acc)}</div>`}
+
+/* ===== Overview: rings, encouragement, medals ===== */
+const TIER=[['Bronze','#c27c48'],['Silver','#b9bcc2'],['Gold','#e2b23c'],['Platinum','#7fd6e6']];
+function weekStart(t){const d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()-wd(d));return d.getTime()}
+const target=()=>{const n=Array.isArray(week)?week.filter(Boolean).length:0;return n||3};
+function weekRuns(){// weeks Monday to Sunday from your first session, sessions counted per week
+  if(!HIST.length)return[];const out=[];const first=weekStart(HIST[0].start),last=weekStart(Date.now());let i=0;
+  for(let w=first;w<=last;w=weekStart(w+8*DAY)){const e=weekStart(w+8*DAY);const ss=HIST.filter(S=>S.start>=w&&S.start<e);out.push({w,n:ss.length,end:ss.length?ss[ss.length-1].start:w})}return out}
+function liftTrend(){// best set in the last 30 days against the best set 60 to 90 days ago
+  return LIFTS.map(n=>{const R=SETS.filter(r=>r.ex===n&&r.w>0);const a=R.filter(r=>r.start>NOW-90*DAY&&r.start<=NOW-60*DAY),b=R.filter(r=>r.start>NOW-30*DAY);
+    if(!a.length||!b.length)return null;const x=Math.max(...a.map(r=>r.e1)),y=Math.max(...b.map(r=>r.e1));const g=(y/x-1)*100;return{n,x,y,g,s:g>=1?'up':g<=-1?'down':'flat'}}).filter(Boolean)}
+function ring(parts,total,center,sub){// parts: [[value,colour]], drawn as a donut
+  const R=48,C=2*Math.PI*R;let o=`<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="${R}" fill="none" stroke="#262624" stroke-width="13"/>`;let at=0;const gap=parts.filter(p=>p[0]>0).length>1?4:0;
+  parts.forEach(([v,c])=>{if(!(v>0)||!total)return;const len=Math.max(0,v/total*C-gap);o+=`<circle cx="60" cy="60" r="${R}" fill="none" stroke="${c}" stroke-width="13" stroke-linecap="${gap?'butt':'round'}" stroke-dasharray="${len.toFixed(2)} ${C}" stroke-dashoffset="${(-at).toFixed(2)}" transform="rotate(-90 60 60)"/>`;at+=v/total*C});
+  return o+`<text x="60" y="62" text-anchor="middle" font-size="28" font-weight="900" fill="#f0efec" font-family="Inter,system-ui">${center}</text><text x="60" y="82" text-anchor="middle" font-size="11.5" font-weight="700" fill="#a9a89f" font-family="Inter,system-ui">${sub}</text></svg>`}
+function achievements(){// every tier is dated from your own history
+  const sess=HIST.map(S=>S.start);const runs=weekRuns();const T=Math.min(3,target());
+  const list=[];const mk=(id,name,unit,tiers,series,fmt)=>{const val=series.length?series[series.length-1].v:0;list.push({id,name,unit,tiers,val,fmt,dates:tiers.map(t=>{const hit=series.find(p=>p.v>=t);return hit?hit.t:null})})};
+  mk('sessions','Workouts','',[10,50,100,250],sess.map((t,i)=>({t,v:i+1})),v=>Math.round(v));
+  let run=0,best=0;const streak=[];runs.forEach(r=>{run=r.n>=T?run+1:0;if(run>best){best=run;streak.push({t:r.end,v:best})}});
+  mk('streak','Streak','wk',[4,8,16,26],streak,v=>v+' wk');
+  const top={};let prs=0;const pr=[];HIST.forEach(S=>{S.ex.forEach(E=>{const b=Math.max(0,...(E.sets||[]).filter(s=>s.w>0&&s.r>0).map(e1rm));if(!b)return;if(top[E.name]&&b>top[E.name]){prs++;pr.push({t:S.start,v:prs})}top[E.name]=Math.max(top[E.name]||0,b)})});
+  mk('prs','Records','',[10,50,150,300],pr,v=>Math.round(v));
+  let kg=0;const vol=[];HIST.forEach(S=>{S.ex.forEach(E=>(E.sets||[]).forEach(s=>kg+=(+s.w||0)*(+s.r||0)));vol.push({t:S.start,v:kg/1000})});
+  mk('volume','Lifted','t',[50,250,1000,2500],vol,v=>(v>=100?Math.round(v):v.toFixed(1))+' t');
+  let ms=0;const tut=[];HIST.forEach(S=>{S.ex.forEach(E=>(E.sets||[]).forEach(s=>ms+=+s.tut||0));tut.push({t:S.start,v:ms/36e5})});
+  mk('tut','Tension','h',[1,5,10,25],tut,v=>(v>=10?Math.round(v):v.toFixed(1))+' h');
+  return list}
+function medalSVG(tierIdx){const c=tierIdx>=0?TIER[tierIdx][1]:'#2e2e2c';const ring=tierIdx>=0?'#f0efec':'#46463f';
+  return `<svg viewBox="0 0 40 40"><path d="M20 3l14.7 8.5v17L20 37 5.3 28.5v-17z" fill="${c}" stroke="${ring}" stroke-width="1.8" stroke-linejoin="round"/>${tierIdx>=0?`<path d="M20 12.5l2.3 4.8 5.2.7-3.8 3.6.9 5.2-4.6-2.5-4.6 2.5.9-5.2-3.8-3.6 5.2-.7z" fill="#121212" opacity=".55"/>`:''}</svg>`}
+const tierOf=a=>a.tiers.reduce((k,t,i)=>a.val>=t?i:k,-1);
+function overviewTop(){const T=target();const ws=weekStart(Date.now());const done=HIST.filter(S=>S.start>=ws).length;const left=Math.max(0,T-done);
+  const lt=liftTrend();const up=lt.filter(l=>l.s==='up').length,fl=lt.filter(l=>l.s==='flat').length,dn=lt.filter(l=>l.s==='down').length;
+  const cons=`<button class="an-ring" data-ring="week">${ring([[Math.min(done,T),'#199e70']],T,done+'/'+T,'this week')}<div class="an-rl" style="color:#199e70">CONSISTENCY</div><div class="an-rs">${left?left+' to go':'Week done'}</div></button>`;
+  const str=lt.length?`<button class="an-ring" data-ring="lifts">${ring([[up,'#3987e5'],[fl,'#c98500'],[dn,'#e66767']],lt.length,up+'/'+lt.length,'lifts up')}<div class="an-rl" style="color:#3987e5">STRENGTH</div><div class="an-rs">vs 2 months ago</div></button>`
+    :`<div class="an-ring">${ring([],1,'–','lifts up')}<div class="an-rl" style="color:#3987e5">STRENGTH</div><div class="an-rs">Fills in after 3 months</div></div>`;
+  const A=achievements();const next=A.map(a=>{const k=tierOf(a);if(k>=a.tiers.length-1)return null;const need=a.tiers[k+1];return{a,k:k+1,need,frac:a.val/need}}).filter(Boolean).sort((x,y)=>y.frac-x.frac)[0];
+  const best=lt.length?lt.reduce((x,y)=>y.g>x.g?y:x,lt[0]):null;
+  const cheer=left===0?'Week done. Nice work.':done===0?`${T} on the plan this week.`:`${left} more to finish the week.`;
+  const noun={sessions:n=>n+' workout'+(n===1?'':'s'),streak:n=>n+' week'+(n===1?'':'s'),prs:n=>n+' record'+(n===1?'':'s'),volume:n=>n.toFixed(1)+' t',tut:n=>n.toFixed(1)+' h'};
+  const sub=next&&next.frac>=.75?`${noun[next.a.id](next.a.id==='volume'||next.a.id==='tut'?next.need-next.a.val:Math.ceil(next.need-next.a.val))} from ${TIER[next.k][0]}`:best&&best.g>=1?`${best.n} up ${best.g.toFixed(0)}% lately`:'';
+  const medals=A.map(a=>{const k=tierOf(a);const nx=a.tiers[k+1];const prev=k>=0?a.tiers[k]:0;const pct=nx?Math.min(100,(a.val-prev)/(nx-prev)*100):100;const col=k>=0?TIER[k][1]:'#46463f';
+    return `<button class="an-medal" data-medal="${a.id}">${medalSVG(k)}<b>${a.name}</b><span class="an-mv">${a.fmt(a.val)}</span><span class="an-pb2"><i style="width:${pct}%;background:${nx?TIER[k+1][1]:col}"></i></span><small>${nx?a.fmt(nx-a.val)+' to '+TIER[k+1][0]:'Maxed'}</small></button>`}).join('');
+  return `<div class="an-rings">${cons}${str}</div><div class="an-cheer">${cheer}${sub?`<div style="font-size:14px;font-weight:700;color:#a9a89f;margin-top:3px">${sub}</div>`:''}</div><div class="an-sec">ACHIEVEMENTS</div><div class="an-ach">${medals}</div><div class="an-sec">CHARTS</div>`}
+function ringDrill(kind){if(kind==='week'){const runs=weekRuns().slice(-12);const T=target();const pts=runs.map((r,i)=>({x:i,y:r.n,r}));const hit=runs.filter(r=>r.n>=T).length;
+    return{k:'CONSISTENCY',acc:'#199e70',h:`${hit} of last ${runs.length} weeks on plan`,chart:{series:[{col:'#199e70',pts,tip:p=>`<b>Week of ${fmtDate(p.r.w)}</b><br>${p.y} session${p.y===1?'':'s'}`}],xr:[0,Math.max(1,pts.length-1)],yt:[0,Math.max(T,...pts.map(p=>p.y))],xt:[0,pts.length-1],xfmt:i=>i===pts.length-1?'This wk':fmtDate(runs[i].w),yfmt:v=>v,ht:150},
+      facts:[[T,'a week on your plan'],[avg(runs.map(r=>r.n)).toFixed(1),'average, last 12 weeks']]}}
+  const lt=liftTrend().sort((a,b)=>b.g-a.g);
+  return{k:'STRENGTH',acc:'#3987e5',h:`${lt.filter(l=>l.s==='up').length} of ${lt.length} lifts up`,rows:lt.map(l=>[l.n,`${l.x.toFixed(0)} → ${l.y.toFixed(0)} ${U()}`,`<span style="color:${l.s==='up'?'#6d9eea':l.s==='down'?'#e66767':'#c98500'}">${l.g>=0?'+':''}${l.g.toFixed(0)}%</span>`]),
+    p:['Best estimated max in the last 30 days against 60 to 90 days ago. Within 1% counts as steady.']}}
+function medalSheet(id){const a=achievements().find(x=>x.id===id);const k=tierOf(a);
+  ansheet(`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">${medalSVG(k).replace('<svg','<svg style="width:52px;height:52px"')}<div><div class="an-k" style="color:${k>=0?TIER[k][1]:'#8a8980'}">${k>=0?TIER[k][0].toUpperCase():'NOT YET'}</div><h3 style="margin:2px 0 0">${a.name}: ${a.fmt(a.val)}</h3></div></div>
+    ${a.tiers.map((t,i)=>`<div class="an-tier${a.dates[i]?' got':''}">${medalSVG(a.dates[i]?i:-1)}<b>${TIER[i][0]}</b><span style="color:#a9a89f;font-weight:700;margin-left:6px">${a.fmt(t)}</span><span>${a.dates[i]?fmtDate(a.dates[i])+" '"+String(new Date(a.dates[i]).getFullYear()).slice(2):a.fmt(t-a.val)+' to go'}</span></div>`).join('')}
+    <p style="margin-top:10px;font-size:13px;color:#8a8980">${{sessions:'Finished workouts.',streak:`Weeks in a row with ${Math.min(3,target())} or more workouts.`,prs:'Times a set beat your best estimated max on that exercise.',volume:'Weight × reps, every set.',tut:'Time under tension from the set timer.'}[id]}</p>`)}
+function liftPick(){const{sh,close}=ansheet(`<h3>Lift</h3>${LIFTS.map(n=>`<button class="an-opt${n===ex?' on':''}" data-pl="${esc(n)}"><span class="an-sw"><i style="width:14px;height:14px;border-radius:50%;background:${LCOL[n]};border:2px solid #f0efec"></i></span><span><b>${esc(n)}</b></span>${n===ex?'<span class="an-st" style="color:#111">✓</span>':''}</button>`).join('')}`);
+  sh.querySelectorAll('[data-pl]').forEach(b=>b.onclick=()=>{ex=b.dataset.pl;S.set('gym.anEx',ex);close();render()})}
+function statsHTML(){anRefresh();DRILLS=[];
+  const seg=`<div class="an-seg">${[['overview','Overview'],['advanced','Advanced']].map(([k,l])=>`<button data-atab="${k}" class="${tab===k?'on':''}">${l}</button>`).join('')}</div>`;
+  const head=`<div class="an-hd"><h1>Analytics ${window.DEMO_DATA?'<span class="an-sample" data-sample>SAMPLE DATA</span>':''}</h1><div style="display:flex;gap:8px"><button class="an-editb${edit?' on':''}" data-aedit>${edit?'Done':'Edit'}</button><button class="iconbtn" data-settings aria-label="Settings">${IC.gear}</button></div></div>`;
+  if(!HIST.length)return head+seg+`<div class="an-nolift"><b>Nothing to show yet</b>Finish your first workout and your charts start filling in. Time the sets you can, since a lot of these charts use time under tension and rest.</div>`;
+  const noEx=tab==='advanced'&&!ex;
+  return head+seg+(tab==='overview'?overviewTop():LIFTS.length?`<div class="an-exsel">${LIFTS.map(n=>`<button data-aex="${esc(n)}" class="${n===ex?'on':''}"><i style="background:${LCOL[n]}"></i>${esc(n)}</button>`).join('')}</div>`:'')
+    +(noEx?`<div class="an-nolift"><b>Log a few more sets</b>Once an exercise with weight has 6 or more sets, it shows up here.</div>`:lists[tab].map(cardHTML).join(''))+`<button class="an-addc" data-aadd>＋ Add a chart</button>`}
+function drawChart(){}
+function bindAnalytics(A){const $$=s=>A.querySelectorAll(s);const M=$('#main');
+  $$('[data-atab]').forEach(b=>b.onclick=()=>{tab=b.dataset.atab;edit=false;render();if(M)M.scrollTop=0;const m=$('#main');if(m)m.scrollTop=0});
+  $$('[data-aex]').forEach(b=>b.onclick=()=>{ex=b.dataset.aex;S.set('gym.anEx',ex);render()});
+  $$('[data-aedit]').forEach(b=>b.onclick=()=>{edit=!edit;render()});
+  $$('[data-aadd]').forEach(b=>b.onclick=catalog);
+  $$('[data-sample]').forEach(b=>b.onclick=e=>{e.stopPropagation();ansheet(`<div class="an-k" style="color:#8a8980">SAMPLE DATA</div><h3>This preview runs on a made-up year of training.</h3><p>It's ${HIST.length} workouts and ${SETS.length} sets, stored exactly the way the app stores yours. Every number and sentence here is calculated from those sets.</p><p>The sample was built with some patterns in it, like strength fading on very long sets and reps coming back with rest, so the charts have something to find. With your own sets, the charts show whatever your data shows.</p>`)});
+  $$('[data-rm]').forEach(b=>b.onclick=e=>{e.stopPropagation();const L=lists[tab];L.splice(L.indexOf(b.dataset.rm),1);saveLists();render()});
+  $$('[data-up]').forEach(b=>b.onclick=e=>{e.stopPropagation();const L=lists[tab];const i=L.indexOf(b.dataset.up);if(i>0){[L[i-1],L[i]]=[L[i],L[i-1]];saveLists();render()}});
+  $$('[data-ring]').forEach(b=>b.onclick=()=>openDrill(ringDrill(b.dataset.ring)));
+  $$('[data-medal]').forEach(b=>b.onclick=()=>medalSheet(b.dataset.medal));
+  $$('[data-lp]').forEach(b=>b.onclick=e=>{e.stopPropagation();liftPick()});
+  $$('[data-ax]').forEach(b=>b.onclick=e=>{e.stopPropagation();axisPick(b.dataset.id,b.dataset.ax)});
+  $$('[data-card]').forEach(c=>c.onclick=e=>{if(e.target.closest('.an-ctl,.an-axes,.an-lp,[data-tip],[data-drill]'))return;const id=c.dataset.card;try{const d=id.startsWith('custom')?customMake(...id.split(':').slice(1)):CARDS[id].make();showInsight(d,id.startsWith('custom')?LCOL[ex]:(CARDS[id].hex||LCOL[ex]))}catch(err){console.error(err)}});
+}
+function ansheet(html){const app=$('#app');const sc=document.createElement('div');sc.className='scrim an-scrim';const sh=document.createElement('div');sh.className='an-sheet';sh.innerHTML='<div class="an-grab"></div><button class="sclose" aria-label="Close">✕</button>'+html;
+  sc.appendChild(sh);app.appendChild(sc);const close=()=>sc.remove();sc.addEventListener('click',e=>{if(e.target===sc)close()});sh.querySelector('.sclose').addEventListener('click',e=>{e.stopPropagation();close()});return{sh,close}}
+function showInsight(d,acc){const I=d.ins;if(!I)return;const{sh,close}=ansheet(`<div class="an-k" style="color:${acc}">${d.k}</div><h3>${I.h}</h3>${I.facts?`<div class="an-facts">${I.facts.map(([b,s])=>`<div><b>${b}</b><small>${s}</small></div>`).join('')}</div>`:''}${(I.p||[]).map(t=>`<p>${t}</p>`).join('')}<div class="an-src">Based on ${I.n}.</div>`);sh.onclick=close}
+function openDrill(d){const acc=d.acc||LCOL[ex];const{sh,close}=ansheet(`<div class="an-k" style="color:${acc}">${d.k}</div><h3>${d.h}</h3>${d.facts?`<div class="an-facts">${d.facts.map(([b,s])=>`<div><b>${b}</b><small>${s}</small></div>`).join('')}</div>`:''}
+  ${d.chart?`<div style="background:#151514;border-radius:18px;padding:10px 8px 6px;margin-bottom:12px">${chart(d.chart,acc)}</div>`:''}${d.html||''}
+  ${d.rows&&d.rows.length?`<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">${d.rows.slice(0,40).map(r=>`<div style="display:flex;gap:10px;align-items:center;background:#242423;border-radius:12px;padding:10px 12px;font-size:13.5px"><b style="flex:none;min-width:92px">${r[0]}</b><span style="flex:1;color:#c3c2b7">${r[1]}</span><b>${r[2]||''}</b></div>`).join('')}${d.rows.length>40?`<div class="an-src">and ${d.rows.length-40} more</div>`:''}</div>`:''}
+  ${(d.p||[]).map(t=>`<p>${t}</p>`).join('')}`);
+  sh.addEventListener('click',e=>{if(e.target.closest('[data-tip]'))return;close()})}
+function catalog(){const list=lists[tab];const opts=Object.entries(CARDS).filter(([,c])=>c.tab===tab);
+  const icon=`<svg viewBox="0 0 30 30"><path d="M4 22 L11 15 L17 18 L26 7" fill="none" stroke="#f0efec" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="15" r="3" fill="currentColor" stroke="#f0efec" stroke-width="1.4"/><circle cx="26" cy="7" r="3.4" fill="currentColor" stroke="#f0efec" stroke-width="1.4"/></svg>`;
+  const sub={overview:'Habits and strength over time.',advanced:'What moves your strength. Or build your own.'}[tab];
+  const{sh,close}=ansheet(`<h3>Add to ${tab[0].toUpperCase()+tab.slice(1)}</h3><p style="margin:-4px 0 14px;font-size:13.5px;color:#8a8980">${sub}</p>
+    ${tab==='advanced'?`<button class="an-opt" data-pick="custom"><span class="an-sw"><svg viewBox="0 0 30 30"><path d="M6 24V6M6 24H24" stroke="#f0efec" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="13" cy="17" r="2.6" fill="#3987e5" stroke="#f0efec" stroke-width="1.3"/><circle cx="19" cy="11" r="2.6" fill="#d95926" stroke="#f0efec" stroke-width="1.3"/></svg></span><span><b>Build your own</b><small>Pick two measures for the X and Y axes</small></span><span class="an-st add">Add</span></button>`:''}
+    ${opts.map(([id,c])=>`<button class="an-opt" data-pick="${id}"><span class="an-sw" style="color:${c.hex||LCOL[ex]||'#3987e5'}">${icon}</span><span><b>${c.name}</b><small>${c.desc}</small></span><span class="an-st${list.includes(id)?'':' add'}">${list.includes(id)?'Added':'Add'}</span></button>`).join('')}`);
+  sh.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{let id=b.dataset.pick;if(id==='custom'){let n=0;const combos=[['week','e1'],['load','r'],['set','r'],['pace','rel'],['rest','rel'],['tut','rel']];do{id='custom:'+combos[n%combos.length].join(':');n++}while(list.includes(id)&&n<10)}
+    if(!list.includes(id)){list.push(id);saveLists();close();render();setTimeout(()=>{const M=$('#main');if(M)M.scrollTo({top:M.scrollHeight,behavior:'smooth'})},50)}})}
+function axisPick(id,ax){let[,xk,yk]=id.split(':');if(!ALLOWED[xk])xk='rest';const keys=ax==='x'?XM:ALLOWED[xk];const cur=ax==='x'?xk:yk;
+  const{sh,close}=ansheet(`<h3>${ax==='x'?'X axis':'Y axis'}</h3>${ax==='y'?`<p style="margin:-4px 0 12px;font-size:13.5px;color:#8a8980">Only measures that pair usefully with ${MET[xk].l.toLowerCase()}.</p>`:''}${keys.map(k=>`<button class="an-opt${k===cur?' on':''}" data-m="${k}"><span><b>${MET[k].l}</b>${ax==='x'?`<small>${ALLOWED[k].map(y=>MET[y].l).join(', ')}</small>`:''}</span>${k===cur?'<span class="an-st" style="color:#111">✓</span>':''}</button>`).join('')}`);
+  sh.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const L=lists[tab];let nx=xk,ny=yk;if(ax==='x'){nx=b.dataset.m;if(!ALLOWED[nx].includes(ny))ny=ALLOWED[nx][0]}else ny=b.dataset.m;const nid='custom:'+nx+':'+ny;if(L.includes(nid)&&nid!==id){close();return}L[L.indexOf(id)]=nid;saveLists();close();render()})}
+// tooltips and tap-to-drill, set up once
+const antip=document.createElement('div');antip.className='an-tip';document.body.appendChild(antip);
+document.addEventListener('pointerover',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');if(!t){antip.style.display='none';return}
+  antip.innerHTML=t.getAttribute('data-tip');const r=t.getBoundingClientRect();antip.style.left=Math.min(innerWidth-120,Math.max(120,r.left+r.width/2))+'px';antip.style.top=r.top+r.height/2+'px';antip.style.display='block'});
+document.addEventListener('pointerdown',e=>{if(!(e.target.closest&&e.target.closest('[data-tip]')))antip.style.display='none'});
+document.addEventListener('scroll',()=>antip.style.display='none',{capture:true,passive:true});
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-drill]');if(!t)return;e.stopPropagation();e.preventDefault();antip.style.display='none';const fn=DRILLS[+t.dataset.drill.slice(1)];if(!fn)return;
+  document.querySelectorAll('.an-scrim').forEach(x=>x.remove());try{openDrill(fn())}catch(err){console.error(err)}},true);
+
+window.anCanBack=()=>edit||tab==='advanced';window.anBack=()=>{if(edit)edit=false;else tab='overview';render();const m=$('#main');if(m)m.scrollTop=0};
+window.statsHTML=statsHTML;window.drawChart=drawChart;window.bindAnalytics=bindAnalytics;window.anReset=()=>{anKey=''};
+})();

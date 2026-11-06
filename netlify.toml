@@ -1,0 +1,13 @@
+[build]
+  command = "python3 build.py"
+  publish = "dist"
+
+[[redirects]]
+  from = "/preview"
+  to = "/preview.html"
+  status = 200
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
