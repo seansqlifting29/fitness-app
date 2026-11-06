@@ -106,7 +106,7 @@ const monthIdx=t=>{const d=new Date(t),s=new Date(HIST[0].start);return (d.getFu
 const monthName=i=>{const s=new Date(HIST[0].start);const d=new Date(s.getFullYear(),s.getMonth()+i,1);return MONA[d.getMonth()]+(SPAN_M>=12&&(i===0||i===SPAN_M)?" '"+String(d.getFullYear()).slice(2):'')};
 // rebuild the per-set table whenever history changes
 function anRefresh(){const key=hist.length+':'+(hist.length?(hist[hist.length-1].id||'')+(hist[hist.length-1].start||''):'');if(key===anKey)return;anKey=key;
-  HIST=hist.filter(h=>h&&Array.isArray(h.ex)&&h.ex.length).map(h=>{const st=h.start||fromKey(h.date).getTime()+12*36e5;return{start:st,end:st+(h.total||0),split:h.split,ex:h.ex}}).sort((a,b)=>a.start-b.start);
+  HIST=hist.filter(h=>h&&Array.isArray(h.ex)&&h.ex.length).map(h=>{const st=h.start||fromKey(h.date).getTime()+12*36e5;return{start:st,end:st+(h.total||0),split:h.split,ex:h.ex,total:+h.total||0,tut:+h.tut||0,rest:+h.rest||0,warm:+h.warm||0,makeup:h.makeup||null}}).sort((a,b)=>a.start-b.start);
   NOW=Math.max(Date.now(),HIST.length?HIST[HIST.length-1].end:0);SPAN_M=HIST.length?monthIdx(HIST[HIST.length-1].start):0;
   const rows=[];HIST.forEach((S,si)=>{const gapD=si?Math.round((new Date(S.start).setHours(0,0,0,0)-new Date(HIST[si-1].start).setHours(0,0,0,0))/DAY):null;const hour=new Date(S.start).getHours()+new Date(S.start).getMinutes()/60;
     S.ex.forEach(E=>(E.sets||[]).forEach((s,i)=>{if(!(s.r>0))return;const prev=i?E.sets[i-1]:null;rows.push({si,start:S.start,hour,gapD,ex:E.name,group:groupOf(E.name),set:i+1,w:+s.w||0,r:s.r,tut:(s.tut||0)/1000,rest:s.rest?s.rest/1000:null,
@@ -350,7 +350,7 @@ function cardHTML(id){const isC=id.startsWith('custom');const D=isC?{hex:'#f0efe
 /* ===== Overview: rings, encouragement, medals ===== */
 const TIER=[['Bronze','#c27c48'],['Silver','#b9bcc2'],['Gold','#e2b23c'],['Platinum','#7fd6e6']];
 function weekStart(t){const d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()-wd(d));return d.getTime()}
-const target=()=>{const n=Array.isArray(week)?week.filter(Boolean).length:0;return n||3};
+const target=()=>{const n=Array.isArray(week)?week.filter(isW).length:0;return n||3};
 function weekRuns(){// weeks Monday to Sunday from your first session, sessions counted per week
   if(!HIST.length)return[];const out=[];const first=weekStart(HIST[0].start),last=weekStart(Date.now());let i=0;
   for(let w=first;w<=last;w=weekStart(w+8*DAY)){const e=weekStart(w+8*DAY);const ss=HIST.filter(S=>S.start>=w&&S.start<e);out.push({w,n:ss.length,end:ss.length?ss[ss.length-1].start:w})}return out}
@@ -360,36 +360,59 @@ function liftTrend(){// best set in the last 30 days against the best set 60 to 
 function ring(parts,total,center,sub){// parts: [[value,colour]], drawn as a donut
   const R=48,C=2*Math.PI*R;let o=`<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="${R}" fill="none" stroke="#262624" stroke-width="13"/>`;let at=0;const gap=parts.filter(p=>p[0]>0).length>1?4:0;
   parts.forEach(([v,c])=>{if(!(v>0)||!total)return;const len=Math.max(0,v/total*C-gap);o+=`<circle cx="60" cy="60" r="${R}" fill="none" stroke="${c}" stroke-width="13" stroke-linecap="${gap?'butt':'round'}" stroke-dasharray="${len.toFixed(2)} ${C}" stroke-dashoffset="${(-at).toFixed(2)}" transform="rotate(-90 60 60)"/>`;at+=v/total*C});
-  return o+`<text x="60" y="62" text-anchor="middle" font-size="28" font-weight="900" fill="#f0efec" font-family="Inter,system-ui">${center}</text><text x="60" y="82" text-anchor="middle" font-size="11.5" font-weight="700" fill="#a9a89f" font-family="Inter,system-ui">${sub}</text></svg>`}
+  return o+`<text x="60" y="62" text-anchor="middle" font-size="${String(center).length>4?(String(center).length>5?18:21):28}" font-weight="900" fill="#f0efec" font-family="Inter,system-ui">${center}</text><text x="60" y="82" text-anchor="middle" font-size="11.5" font-weight="700" fill="#a9a89f" font-family="Inter,system-ui">${sub}</text></svg>`}
 function achievements(){// every tier is dated from your own history
   const sess=HIST.map(S=>S.start);const runs=weekRuns();const T=Math.min(3,target());
   const list=[];const mk=(id,name,unit,tiers,series,fmt)=>{const val=series.length?series[series.length-1].v:0;list.push({id,name,unit,tiers,val,fmt,dates:tiers.map(t=>{const hit=series.find(p=>p.v>=t);return hit?hit.t:null})})};
-  mk('sessions','Workouts','',[10,50,100,250],sess.map((t,i)=>({t,v:i+1})),v=>Math.round(v));
-  let run=0,best=0;const streak=[];runs.forEach(r=>{run=r.n>=T?run+1:0;if(run>best){best=run;streak.push({t:r.end,v:best})}});
-  mk('streak','Streak','wk',[4,8,16,26],streak,v=>v+' wk');
-  const top={};let prs=0;const pr=[];HIST.forEach(S=>{S.ex.forEach(E=>{const b=Math.max(0,...(E.sets||[]).filter(s=>s.w>0&&s.r>0).map(e1rm));if(!b)return;if(top[E.name]&&b>top[E.name]){prs++;pr.push({t:S.start,v:prs})}top[E.name]=Math.max(top[E.name]||0,b)})});
-  mk('prs','Records','',[10,50,150,300],pr,v=>Math.round(v));
-  let kg=0;const vol=[];HIST.forEach(S=>{S.ex.forEach(E=>(E.sets||[]).forEach(s=>kg+=(+s.w||0)*(+s.r||0)));vol.push({t:S.start,v:kg/1000})});
-  mk('volume','Lifted','t',[50,250,1000,2500],vol,v=>(v>=100?Math.round(v):v.toFixed(1))+' t');
-  let ms=0;const tut=[];HIST.forEach(S=>{S.ex.forEach(E=>(E.sets||[]).forEach(s=>ms+=+s.tut||0));tut.push({t:S.start,v:ms/36e5})});
-  mk('tut','Tension','h',[1,5,10,25],tut,v=>(v>=10?Math.round(v):v.toFixed(1))+' h');
+  // nothing here climbs on its own: every badge is about showing up
+  const P=target();let kept=0;const keptS=[];const cur=weekStart(Date.now());
+  runs.forEach(r=>{if(r.n>=P&&(r.w<cur||r.n>=P)){kept++;keptS.push({t:r.end,v:kept})}});
+  mk('kept','Kept weeks','wk',[4,12,26,52],keptS,v=>v+' wk');
+  let run=0,best=0;const streak=[];runs.forEach(r=>{run=r.n>=T?run+1:r.w>=cur?run:0;if(run>best){best=run;streak.push({t:r.end,v:best})}});
+  mk('streak','Week streak','wk',[4,8,16,26],streak,v=>v+' wk');
+  mk('sessions','Showed up','',[10,50,100,250],sess.map((t,i)=>({t,v:i+1})),v=>Math.round(v));
+  let mu=0;const mks=[];HIST.forEach(S=>{if(S.makeup){mu++;mks.push({t:S.start,v:mu})}});
+  mk('makeups','Made it up','',[1,5,15,30],mks,v=>Math.round(v));
   return list}
 function medalSVG(tierIdx){const c=tierIdx>=0?TIER[tierIdx][1]:'#2e2e2c';const ring=tierIdx>=0?'#f0efec':'#46463f';
   return `<svg viewBox="0 0 40 40"><path d="M20 3l14.7 8.5v17L20 37 5.3 28.5v-17z" fill="${c}" stroke="${ring}" stroke-width="1.8" stroke-linejoin="round"/>${tierIdx>=0?`<path d="M20 12.5l2.3 4.8 5.2.7-3.8 3.6.9 5.2-4.6-2.5-4.6 2.5.9-5.2-3.8-3.6 5.2-.7z" fill="#121212" opacity=".55"/>`:''}</svg>`}
 const tierOf=a=>a.tiers.reduce((k,t,i)=>a.val>=t?i:k,-1);
+/* ---- one pie, you choose what it shows ---- */
+const PIES=[['plan','Showing up'],['time','Gym time'],['muscle','Muscles'],['ratio','Work : rest']];
+let pieK=S.get('gym.pie','plan');if(!PIES.some(p=>p[0]===pieK))pieK='plan';
+const pct=(a,b)=>b?Math.round(a/b*100):0;
+function pieData(k){const D28=NOW-28*DAY;
+  if(k==='plan'){// last 12 weeks against the plan you have now; this week only counts days already gone
+    const P=target();const runs=weekRuns().slice(-12);const cur=weekStart(Date.now());const t=wd(new Date());
+    const due=r=>r.w<cur?P:Math.max(0,Array.isArray(week)?week.slice(0,t+1).filter(isW).length:0);
+    let plan=0,done=0;runs.forEach(r=>{const d=due(r);plan+=d;done+=Math.min(r.n,d)});if(!plan)return null;
+    return{parts:[[done,'#199e70','Done'],[plan-done,'#c46a35','Missed']],c:done+'/'+plan,cs:'planned',h:`You kept ${pct(done,plan)}% of your plan over ${runs.length} week${runs.length>1?'s':''}.`,note:'Make-ups count as done.'}}
+  const R=HIST.filter(S=>S.start>=D28);
+  if(k==='time'){const T=R.reduce((a,S)=>a+S.total,0);if(!T||!R.length)return null;const U=R.reduce((a,S)=>a+S.tut,0),Rs=R.reduce((a,S)=>a+S.rest,0),W=R.reduce((a,S)=>a+S.warm,0);const O=Math.max(0,T-U-Rs-W);
+    const parts=[[U,'#199e70','Lifting'],[Rs,'#c46a35','Resting'],[O,'#6b6b66','Between exercises']];if(W)parts.push([W,'#7a5fb0','Warm up']);
+    const big=parts.slice(1).reduce((a,b)=>b[0]>a[0]?b:a);
+    return{parts,c:Math.round(T/R.length/60000)+'m',cs:'per session',h:`${pct(big[0],T)}% of your gym time is ${big[2].toLowerCase()}.`,note:'Last 4 weeks.'}}
+  if(k==='muscle'){const by={};SETS.filter(r=>r.start>=D28).forEach(r=>{by[r.group]=(by[r.group]||0)+1});const L=Object.entries(by).sort((a,b)=>b[1]-a[1]);const n=L.reduce((a,b)=>a+b[1],0);if(!n)return null;
+    const top=L.slice(0,5),rest=L.slice(5).reduce((a,b)=>a+b[1],0);const parts=top.map(([g,v])=>[v,(typeof GC!=='undefined'&&GC[g])||'#8a8980',g]);if(rest)parts.push([rest,'#6b6b66','Other']);
+    const lo=top[top.length-1];return{parts,c:n,cs:'sets',h:top.length>1?`${top[0][0]} get${top[0][0].endsWith('s')?'':'s'} ${pct(top[0][1],n)}% of your sets. ${lo[0]} ${lo[0].endsWith('s')?'get':'gets'} ${pct(lo[1],n)}%.`:`All your sets are ${top[0][0]}.`,note:'Last 4 weeks.'}}
+  if(k==='ratio'){const S2=SETS.filter(r=>r.start>=D28&&r.tut>0&&r.rest>0);if(S2.length<3)return null;const w=avg(S2.map(r=>r.tut)),rs=avg(S2.map(r=>r.rest));
+    return{parts:[[w,'#199e70','Work'],[rs,'#c46a35','Rest']],c:'1:'+(rs/w).toFixed(1),cs:'work : rest',h:`About ${Math.round(w)} s of work for ${mmss(rs)} of rest each set.`,note:'Last 4 weeks, timed sets only.'}}
+  return null}
+function pieHTML(){const d=pieData(pieK);const tot=d?d.parts.reduce((a,p)=>a+p[0],0):1;
+  const chips=`<div class="an-pchips">${PIES.map(([k,l])=>`<button data-pie="${k}" class="${k===pieK?'on':''}">${l}</button>`).join('')}</div>`;
+  if(!d)return `<div class="an-pie"><div class="an-pring">${ring([],1,'–','not enough yet')}</div><div class="an-ph">Log a few more workouts and this fills in.</div>${chips}</div>`;
+  return `<div class="an-pie"><div class="an-pring">${ring(d.parts.map(p=>[p[0],p[1]]),tot,d.c,d.cs)}</div><div class="an-ph">${d.h}</div>
+    <div class="an-pl">${d.parts.filter(p=>p[0]>0).map(p=>`<span><i style="background:${p[1]}"></i>${p[2]} ${pct(p[0],tot)}%</span>`).join('')}</div><div class="an-pn">${d.note}</div>${chips}</div>`}
 function overviewTop(){const T=target();const ws=weekStart(Date.now());const done=HIST.filter(S=>S.start>=ws).length;const left=Math.max(0,T-done);
-  const lt=liftTrend();const up=lt.filter(l=>l.s==='up').length,fl=lt.filter(l=>l.s==='flat').length,dn=lt.filter(l=>l.s==='down').length;
-  const cons=`<button class="an-ring" data-ring="week">${ring([[Math.min(done,T),'#199e70']],T,done+'/'+T,'this week')}<div class="an-rl" style="color:#199e70">CONSISTENCY</div><div class="an-rs">${left?left+' to go':'Week done'}</div></button>`;
-  const str=lt.length?`<button class="an-ring" data-ring="lifts">${ring([[up,'#3987e5'],[fl,'#c98500'],[dn,'#e66767']],lt.length,up+'/'+lt.length,'lifts up')}<div class="an-rl" style="color:#3987e5">STRENGTH</div><div class="an-rs">vs 2 months ago</div></button>`
-    :`<div class="an-ring">${ring([],1,'–','lifts up')}<div class="an-rl" style="color:#3987e5">STRENGTH</div><div class="an-rs">Fills in after 3 months</div></div>`;
+  const lt=liftTrend();const pie=pieHTML();
   const A=achievements();const next=A.map(a=>{const k=tierOf(a);if(k>=a.tiers.length-1)return null;const need=a.tiers[k+1];return{a,k:k+1,need,frac:a.val/need}}).filter(Boolean).sort((x,y)=>y.frac-x.frac)[0];
   const best=lt.length?lt.reduce((x,y)=>y.g>x.g?y:x,lt[0]):null;
   const cheer=left===0?'Week done. Nice work.':done===0?`${T} on the plan this week.`:`${left} more to finish the week.`;
-  const noun={sessions:n=>n+' workout'+(n===1?'':'s'),streak:n=>n+' week'+(n===1?'':'s'),prs:n=>n+' record'+(n===1?'':'s'),volume:n=>n.toFixed(1)+' t',tut:n=>n.toFixed(1)+' h'};
-  const sub=next&&next.frac>=.75?`${noun[next.a.id](next.a.id==='volume'||next.a.id==='tut'?next.need-next.a.val:Math.ceil(next.need-next.a.val))} from ${TIER[next.k][0]}`:best&&best.g>=1?`${best.n} up ${best.g.toFixed(0)}% lately`:'';
+  const noun={sessions:n=>n+' workout'+(n===1?'':'s'),streak:n=>n+' week'+(n===1?'':'s'),kept:n=>n+' kept week'+(n===1?'':'s'),makeups:n=>n+' make-up'+(n===1?'':'s')};
+  const sub=next&&next.frac>=.75?`${noun[next.a.id](Math.ceil(next.need-next.a.val))} from ${TIER[next.k][0]}`:best&&best.g>=1?`${best.n} up ${best.g.toFixed(0)}% lately`:'';
   const medals=A.map(a=>{const k=tierOf(a);const nx=a.tiers[k+1];const prev=k>=0?a.tiers[k]:0;const pct=nx?Math.min(100,(a.val-prev)/(nx-prev)*100):100;const col=k>=0?TIER[k][1]:'#46463f';
     return `<button class="an-medal" data-medal="${a.id}">${medalSVG(k)}<b>${a.name}</b><span class="an-mv">${a.fmt(a.val)}</span><span class="an-pb2"><i style="width:${pct}%;background:${nx?TIER[k+1][1]:col}"></i></span><small>${nx?a.fmt(nx-a.val)+' to '+TIER[k+1][0]:'Maxed'}</small></button>`}).join('');
-  return `<div class="an-rings">${cons}${str}</div><div class="an-cheer">${cheer}${sub?`<div style="font-size:14px;font-weight:700;color:#a9a89f;margin-top:3px">${sub}</div>`:''}</div><div class="an-sec">ACHIEVEMENTS</div><div class="an-ach">${medals}</div><div class="an-sec">CHARTS</div>`}
+  return `${pie}<div class="an-cheer">${cheer}${sub?`<div style="font-size:14px;font-weight:700;color:#a9a89f;margin-top:3px">${sub}</div>`:''}</div><div class="an-sec">ACHIEVEMENTS</div><div class="an-ach">${medals}</div><div class="an-sec">CHARTS</div>`}
 function ringDrill(kind){if(kind==='week'){const runs=weekRuns().slice(-12);const T=target();const pts=runs.map((r,i)=>({x:i,y:r.n,r}));const hit=runs.filter(r=>r.n>=T).length;
     return{k:'CONSISTENCY',acc:'#199e70',h:`${hit} of last ${runs.length} weeks on plan`,chart:{series:[{col:'#199e70',pts,tip:p=>`<b>Week of ${fmtDate(p.r.w)}</b><br>${p.y} session${p.y===1?'':'s'}`}],xr:[0,Math.max(1,pts.length-1)],yt:[0,Math.max(T,...pts.map(p=>p.y))],xt:[0,pts.length-1],xfmt:i=>i===pts.length-1?'This wk':fmtDate(runs[i].w),yfmt:v=>v,ht:150},
       facts:[[T,'a week on your plan'],[avg(runs.map(r=>r.n)).toFixed(1),'average, last 12 weeks']]}}
@@ -399,7 +422,7 @@ function ringDrill(kind){if(kind==='week'){const runs=weekRuns().slice(-12);cons
 function medalSheet(id){const a=achievements().find(x=>x.id===id);const k=tierOf(a);
   ansheet(`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">${medalSVG(k).replace('<svg','<svg style="width:52px;height:52px"')}<div><div class="an-k" style="color:${k>=0?TIER[k][1]:'#8a8980'}">${k>=0?TIER[k][0].toUpperCase():'NOT YET'}</div><h3 style="margin:2px 0 0">${a.name}: ${a.fmt(a.val)}</h3></div></div>
     ${a.tiers.map((t,i)=>`<div class="an-tier${a.dates[i]?' got':''}">${medalSVG(a.dates[i]?i:-1)}<b>${TIER[i][0]}</b><span style="color:#a9a89f;font-weight:700;margin-left:6px">${a.fmt(t)}</span><span>${a.dates[i]?fmtDate(a.dates[i])+" '"+String(new Date(a.dates[i]).getFullYear()).slice(2):a.fmt(t-a.val)+' to go'}</span></div>`).join('')}
-    <p style="margin-top:10px;font-size:13px;color:#8a8980">${{sessions:'Finished workouts.',streak:`Weeks in a row with ${Math.min(3,target())} or more workouts.`,prs:'Times a set beat your best estimated max on that exercise.',volume:'Weight × reps, every set.',tut:'Time under tension from the set timer.'}[id]}</p>`)}
+    <p style="margin-top:10px;font-size:13px;color:#8a8980">${{sessions:'Every workout you logged.',streak:`Weeks in a row with ${Math.min(3,target())} or more workouts. The week you're in doesn't break it.`,kept:`Weeks where you did all ${target()} planned workouts. Make-ups count.`,makeups:'Missed workouts you came back and did.'}[id]}</p>`)}
 function liftPick(){const{sh,close}=ansheet(`<h3>Lift</h3>${LIFTS.map(n=>`<button class="an-opt${n===ex?' on':''}" data-pl="${esc(n)}"><span class="an-sw"><i style="width:14px;height:14px;border-radius:50%;background:${LCOL[n]};border:2px solid #f0efec"></i></span><span><b>${esc(n)}</b></span>${n===ex?'<span class="an-st" style="color:#111">✓</span>':''}</button>`).join('')}`);
   sh.querySelectorAll('[data-pl]').forEach(b=>b.onclick=()=>{ex=b.dataset.pl;S.set('gym.anEx',ex);close();render()})}
 function statsHTML(){anRefresh();DRILLS=[];
@@ -414,6 +437,7 @@ function bindAnalytics(A){const $$=s=>A.querySelectorAll(s);const M=$('#main');
   $$('[data-atab]').forEach(b=>b.onclick=()=>{tab=b.dataset.atab;edit=false;render();if(M)M.scrollTop=0;const m=$('#main');if(m)m.scrollTop=0});
   $$('[data-aex]').forEach(b=>b.onclick=()=>{ex=b.dataset.aex;S.set('gym.anEx',ex);render()});
   $$('[data-aedit]').forEach(b=>b.onclick=()=>{edit=!edit;render()});
+  $$('[data-pie]').forEach(b=>b.onclick=()=>{pieK=b.dataset.pie;S.set('gym.pie',pieK);render()});
   $$('[data-aadd]').forEach(b=>b.onclick=catalog);
   $$('[data-sample]').forEach(b=>b.onclick=e=>{e.stopPropagation();ansheet(`<div class="an-k" style="color:#8a8980">SAMPLE DATA</div><h3>This preview runs on a made-up year of training.</h3><p>It's ${HIST.length} workouts and ${SETS.length} sets, stored exactly the way the app stores yours. Every number and sentence here is calculated from those sets.</p><p>The sample was built with some patterns in it, like strength fading on very long sets and reps coming back with rest, so the charts have something to find. With your own sets, the charts show whatever your data shows.</p>`)});
   $$('[data-rm]').forEach(b=>b.onclick=e=>{e.stopPropagation();const L=lists[tab];L.splice(L.indexOf(b.dataset.rm),1);saveLists();render()});

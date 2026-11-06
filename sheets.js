@@ -11,6 +11,12 @@ function sheet(html,center){
 // a ‹ in the sheet's corner that goes back to the sheet it came from
 function sheetBack(s,to){if(!s||!s.querySelector)return s;const sh=s.querySelector('.sheet');if(!sh)return s;const b=document.createElement('button');b.className='sback';b.setAttribute('data-back','');b.setAttribute('aria-label','Back');b.textContent='‹';
   b.onclick=e=>{e.stopPropagation();s.remove();to()};sh.insertBefore(b,sh.children[1]||null);sh.classList.add('hasback');return s}
+// full screen question for choices that change today's plan
+function takeover(title,text,acts){
+  const t=document.createElement('div');t.className='takeover';t.setAttribute('role','dialog');t.setAttribute('aria-modal','true');
+  t.innerHTML=`<h2>${title}</h2><p>${text}</p><div class="tk">${acts.map((a,i)=>`<button data-tk="${i}" class="${a.primary?'p':a.quiet||!a.fn?'c':''}" ${a.fn?'':'data-close'}>${a.label}</button>`).join('')}</div>`;
+  t.querySelectorAll('[data-tk]').forEach(b=>b.onclick=()=>{t.remove();const f=acts[+b.dataset.tk].fn;f&&f()});
+  $('#app').appendChild(t);return t}
 function confirmBox(title,text,okLabel,onOk,cancel='Cancel'){
   const s=sheet(`<h3>${title}</h3><p>${text}</p><div class="row"><button class="btn" data-close>${cancel}</button><button class="btn w" data-ok>${okLabel}</button></div>`,true);
   s.querySelector('[data-ok]').onclick=()=>{s.remove();onOk()};
@@ -29,13 +35,17 @@ function editSet(e,j){
     const all=s.querySelector('#rest')?.checked;ex.sets.forEach((x,k)=>{if(k===j||(all&&k>j&&!x.done)){x.w=w;x.r=r}});save();s.remove();render()};
 }
 function settingsSheet(){
-  const s=sheet(`<h3>General settings</h3>
+  const s=sheet(`<h3>Settings</h3>
+    <div class="lbl" style="margin-top:10px">You</div>
     <div class="tgl">Name<input id="sn" value="${esc(me.name)}" style="background:var(--card2);border:0;border-radius:9px;padding:8px;width:160px;font-weight:600;outline:none"></div>
     <div class="tgl">Units<div class="seg" style="margin:0;width:120px"><button data-u="kg" class="${U()==='kg'?'on':''}">kg</button><button data-u="lb" class="${U()==='lb'?'on':''}">lb</button></div></div>
+    ${Cloud.available?`<button class="tgl cl-row" data-cloud><div>Cloud sync<small id="clst"></small></div><span class="sar">›</span></button>`:''}
+    <div class="lbl" style="margin-top:18px">Training</div>
     <div class="tgl" style="flex-wrap:wrap"><div>Rest timer<small id="rdesc"></small></div><div class="seg" style="margin:0;width:170px"><button data-rm="ratio" class="${cfg.restMode==='ratio'?'on':''}">Ratio</button><button data-rm="custom" class="${cfg.restMode==='custom'?'on':''}">Custom</button></div></div>
     <div class="tgl" id="rrow" style="${cfg.restMode==='ratio'?'':'display:none'}"><div>Work to rest<small>Rest = set length × this</small></div><div class="ratio"><button data-rr="-1" aria-label="Less rest">−</button><b id="rv">1:${cfg.ratio}</b><button data-rr="1" aria-label="More rest">+</button></div></div>
+    <div class="tgl"><div>Warm up first<small>A warm-up step before your first set</small></div><input type="checkbox" id="swu" ${cfg.warmup?'checked':''}></div>
     <div class="tgl">Beep and vibrate when rest ends<input type="checkbox" id="ss" ${cfg.sound?'checked':''}></div>
-    ${Cloud.available?`<button class="tgl cl-row" data-cloud><div>Cloud sync<small id="clst"></small></div><span class="sar">›</span></button>`:''}
+    <div class="lbl" style="margin-top:18px">Your data</div>
     <div class="tgl" style="border:0"><div>Backup<small>Save your plan and history to a file, or restore one on a new phone</small></div></div>
     <div class="row"><button class="btn" data-bsave>Save backup</button><label class="btn" style="text-align:center;cursor:pointer">Restore<input type="file" accept=".json,application/json" data-bload hidden></label></div>
     <div class="row" style="margin-top:16px"><button class="btn red" data-wipe>Erase all data</button><button class="btn w" data-close>Done</button></div>`);
@@ -44,6 +54,7 @@ function settingsSheet(){
   s.querySelector('#sn').onchange=e=>{me.name=e.target.value.trim()||me.name;save()};
   s.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{cfg.unit=b.dataset.u;save();s.querySelectorAll('[data-u]').forEach(x=>x.classList.toggle('on',x===b));render();$('#app').appendChild(s)});
   s.querySelector('#ss').onchange=e=>{cfg.sound=e.target.checked;save()};
+  s.querySelector('#swu').onchange=e=>{cfg.warmup=e.target.checked;save()};
   const rdesc=()=>{s.querySelector('#rdesc').textContent=cfg.restMode==='ratio'?`A 30s set gets ${clock(Math.min(360000,Math.max(30000,30000*cfg.ratio)))} rest. Kept between 0:30 and 6:00.`:'Each exercise uses the rest time set in Plan.';s.querySelector('#rv').textContent='1:'+cfg.ratio;s.querySelector('#rrow').style.display=cfg.restMode==='ratio'?'':'none'};
   rdesc();
   s.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{cfg.restMode=b.dataset.rm;save();s.querySelectorAll('[data-rm]').forEach(x=>x.classList.toggle('on',x===b));rdesc()});

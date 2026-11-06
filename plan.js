@@ -52,15 +52,15 @@ const fcol=n=>{for(const k in FOCUS){const i=FOCUS[k].w.indexOf(n);if(i>=0)retur
 const focusKey=()=>S.get('gym.focus','fit');
 // the week as names while you edit; nothing is saved until you tap Save
 let pdraft=null,focusMenu=false;
-const weekNames=()=>week.map(id=>{const w=workouts.find(x=>x.id===id);return w?w.name:null});
+const weekNames=()=>week.map(id=>{if(id===REST)return REST;const w=workouts.find(x=>x.id===id);return w?w.name:null});
 const draft=()=>pdraft||(pdraft=weekNames());
 const planDirty=()=>!!pdraft&&pdraft.some((n,i)=>n!==weekNames()[i]);
 function savePlan(){
   const d=draft();
-  d.forEach(n=>{if(n&&!workouts.some(w=>w.name===n)){const ex=(TEMPLATE_EX[n]||[]).map(x=>LIBMAP[x.toLowerCase()]).filter(Boolean).map(x=>E(x.name,x.sets,x.reps,U()==='lb'?Math.round(x.w*2.2/5)*5:x.w,x.rest));workouts.push({id:nid(),name:n,ex})}});
-  week=d.map(n=>n?workouts.find(w=>w.name===n).id:null);pdraft=null;save();syncToday(true);
+  d.forEach(n=>{if(isW(n)&&!workouts.some(w=>w.name===n)){const ex=(TEMPLATE_EX[n]||[]).map(x=>LIBMAP[x.toLowerCase()]).filter(Boolean).map(x=>E(x.name,x.sets,x.reps,U()==='lb'?Math.round(x.w*2.2/5)*5:x.w,x.rest));workouts.push({id:nid(),name:n,ex})}});
+  week=d.map(n=>n===REST?REST:n?workouts.find(w=>w.name===n).id:null);pdraft=null;save();syncToday(true);
 }
-const miniNames=w=>`<div class="mw">${w.map(x=>`<i style="${x?'background:'+fcol(x):''}"></i>`).join('')}</div>`;
+const miniNames=w=>`<div class="mw">${w.map(x=>`<i style="${isW(x)?'background:'+fcol(x):x===REST?'background:#3a3a38':''}"></i>`).join('')}</div>`;
 // ask before leaving with unsaved changes
 function guardLeave(go){
   if(!planDirty())return go();
@@ -100,7 +100,7 @@ function useTemplate(id){
     <div style="margin:4px 0 16px">${miniWeek(t.w)}</div><div class="row"><button class="btn" data-close>Cancel</button><button class="btn w" data-ok>Use this split</button></div>`);
   s.querySelector('[data-ok]').onclick=()=>{
     missing.forEach(n=>{const ex=(TEMPLATE_EX[n]||[]).map(x=>LIBMAP[x.toLowerCase()]).filter(Boolean).map(x=>E(x.name,x.sets,x.reps,U()==='lb'?Math.round(x.w*2.2/5)*5:x.w,x.rest));workouts.push({id:nid(),name:n,ex})});
-    week=t.w.map(n=>n?workouts.find(w=>w.name===n).id:null);
+    week=t.w.map(n=>n?workouts.find(w=>w.name===n).id:REST);
     S.set('gym.split',{id:t.id,name:t.name+' · '+t.sub,custom:false});
     save();s.remove();syncToday();planTab='custom';render();
   };
@@ -137,11 +137,12 @@ function planEditHTML(){
   if(planOpen===undefined||(planOpen&&!w.ex.some(e=>e.id===planOpen)))planOpen=w.ex[0]?w.ex[0].id:null;
   const onDays=week.map((x,i)=>x===w.id?DAYS[i].slice(0,3):'').filter(Boolean);
   const rows=w.ex.map((e,i)=>{const open=planOpen===e.id;
-    const sum=`${e.sets} sets · ${e.w?num(e.w)+' '+U():'no weight'} · ${restTxt(e.rest)} rest`;
+    const cust=cfg.restMode==='custom';
+    const sum=`${e.sets} sets · ${e.w?num(e.w)+' '+U():'no weight'}${cust?` · ${restTxt(e.rest)} rest`:''}`;
     const g=groupOf(e.name);const badge=`<span class="pnum" style="background:${(typeof GC!=='undefined'&&GC[g])||'#8a8980'}">${i+1}</span>`;
     if(!open)return `<button class="prow" data-popen="${e.id}">${badge}<span class="prn">${esc(e.name)}<small>${g!=='Other'?g+' · ':''}${sum}</small></span>${IC.chev}</button>`;
     return `<div class="prow open"><div class="proh">${badge}<span class="prn" data-popen="">${esc(e.name)}<small>${g!=='Other'?g:'Your exercise'}</small></span>${i?`<button class="pmini" data-up="${i}" aria-label="Move up">↑</button>`:''}<button class="pmini" data-del="${i}" aria-label="Remove">✕</button></div>
-      <div class="ptiles"><button class="ptile" data-pe="sets:${i}"><small>Sets</small><b>${e.sets}</b></button><button class="ptile" data-pe="w:${i}"><small>Weight</small><b>${e.w?num(e.w):'–'}<i>${e.w?U():''}</i></b></button><button class="ptile" data-pe="rest:${i}"><small>Rest</small><b>${restTxt(e.rest)}</b></button></div></div>`}).join('');
+      <div class="ptiles${cust?'':' two'}"><button class="ptile" data-pe="sets:${i}"><small>Sets</small><b>${e.sets}</b></button><button class="ptile" data-pe="w:${i}"><small>Weight</small><b>${e.w?num(e.w):'–'}<i>${e.w?U():''}</i></b></button>${cust?`<button class="ptile" data-pe="rest:${i}"><small>Rest</small><b>${restTxt(e.rest)}</b></button>`:''}</div></div>`}).join('');
   return `<div class="hdr"><button class="back" data-backplan>${IC.back}${planMode==='edit'?'Plan':'Schedule'}</button></div>
   <div class="pad"><input class="wname" value="${esc(w.name)}" data-wname aria-label="Workout name" placeholder="Workout name">
     <div class="sub" style="margin:2px 2px 14px;color:var(--t3);font-size:14px">${onDays.length?'Every '+onDays.join(', '):'Not on your week yet. Add it to a day in Plan.'}</div>

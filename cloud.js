@@ -3,7 +3,7 @@
    Changes are queued and pushed when there's a connection; changes from other devices
    are pulled when the app opens or comes back into view.
    Plan, settings etc: newest write wins per item. Workouts: merged, one record each. */
-const SYNC_KEYS=['gym.me','gym.workouts','gym.week','gym.cfg','gym.focus','gym.charts2','gym.anEx','gym.customEx'];
+const SYNC_KEYS=['gym.me','gym.workouts','gym.week','gym.cfg','gym.focus','gym.charts2','gym.anEx','gym.customEx','gym.dropped','gym.extra','gym.pie'];
 const Cloud=(function(){
   const CFG=window.FB_CONFIG||null;const ON=!!CFG&&/^https?:$/.test(location.protocol)&&window.top===window;
   let api=null,user=null,state='off',err='',busy=false,again=false,kickT=null,listeners=[];
@@ -31,7 +31,7 @@ const Cloud=(function(){
   // put what came from the cloud into the running app
   function applyKV(k,raw){try{localStorage.setItem(k,raw)}catch(e){}meta.h[k]=hash(raw);dirty.delete('kv:'+k);
     let v;try{v=JSON.parse(raw)}catch(e){return}
-    if(k==='gym.me'&&v&&v.name)me=v;else if(k==='gym.workouts'&&Array.isArray(v))workouts=v;else if(k==='gym.week'&&Array.isArray(v)&&v.length===7)week=v;
+    if(k==='gym.me'&&v&&v.name)me=v;else if(k==='gym.workouts'&&Array.isArray(v))workouts=v;else if(k==='gym.week'&&Array.isArray(v)&&v.length===7)week=normWeek(v);
     else if(k==='gym.cfg'&&v&&typeof v==='object')Object.assign(cfg,v)}
 
   async function sync(){
@@ -99,7 +99,7 @@ const Cloud=(function(){
   };
 })();
 
-/* ---- the Cloud sync sheet (from General settings) ---- */
+/* ---- the Cloud sync sheet (from Settings) ---- */
 function cloudSheet(){
   const ago=t=>{if(!t)return'never';const m=Math.round((Date.now()-t)/60000);return m<1?'just now':m<60?m+' min ago':Math.round(m/60)+' h ago'};
   const s=sheet('<div id="cl"></div>');const box=s.querySelector('#cl');let mode='in',msg='',working=false;

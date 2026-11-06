@@ -4,7 +4,7 @@
    Triggers: on-screen buttons, the phone's back gesture or button, Escape,
    and swiping a sheet down. Only Today with nothing open lets you leave. */
 (function(){
-const overlays=()=>[...document.querySelectorAll('#app > .scrim, #app > .an-scrim')];
+const overlays=()=>[...document.querySelectorAll('#app > .scrim, #app > .an-scrim, #app > .takeover')];
 function closeOverlay(o){const b=o.querySelector('.sclose,[data-close]');if(b)b.click();else o.remove()}
 function backAction(){
   const L=overlays();const o=L[L.length-1];

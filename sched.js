@@ -1,4 +1,4 @@
-/* ===== Schedule tab: swipe the week, Plan editor (tap a day), exercise picker (muscles + live list) ===== */
+/* ===== Schedule tab: the week as tiles on one screen, Plan editor (tap a day), exercise picker (muscles + live list) ===== */
 let planMode='sched',schedDay=null;
 const GC={Chest:'#3987e5',Back:'#d95926',Shoulders:'#c98500',Arms:'#d55181',Legs:'#199e70',Glutes:'#9085e9',Core:'#e66767',Cardio:'#008300',Other:'#8a8980'};
 // your own exercises live next to the built-in library
@@ -11,56 +11,95 @@ const doneOn=i=>{const k=dkey(dayDate(i));const h=hist.filter(x=>x.date===k);if(
   return h.length?{total:h.reduce((a,x)=>a+(x.total||0),0)}:null};
 const durTxt=ms=>{const m=Math.round(ms/60000);return m>=60?Math.floor(m/60)+'h '+(m%60)+'m':m+' min'};
 
+/* ---- left over: planned workouts this week that were missed, or ended early, become make-ups.
+   A make-up can be done today, planned for another day this week, or several combined into one day. ---- */
+const MAX_DAY=3; // more workouts than this on one day gets a warning
+const dropped=()=>{const d=S.get('gym.dropped',[]);return Array.isArray(d)?d:[]};
+const extras=()=>{const x=S.get('gym.extra',{});return x&&typeof x==='object'&&!Array.isArray(x)?x:{}};
+const madeKeys=()=>new Set(hist.flatMap(h=>Array.isArray(h.makeup)?h.makeup:h.makeup?[h.makeup]:[]));
+// make-ups planned for a date that haven't been done yet
+function extraFor(date){const m=madeKeys();return (extras()[date]||[]).filter(o=>o&&!m.has(o.key)&&workouts.some(w=>w.id===o.wid))}
+function leftovers(){
+  const t=wd(new Date());const mon=dkey(weekMonday()),today=dkey(new Date());const wk=hist.filter(h=>h.date>=mon&&h.date<=today);
+  const made=madeKeys();const drop=new Set(dropped());
+  const X=extras();const planned=new Set(Object.keys(X).filter(d=>d>=today).flatMap(d=>X[d]||[]).map(o=>o.key));
+  const out=[];
+  for(let i=0;i<t;i++){const w=isW(week[i])&&workouts.find(x=>x.id===week[i]);if(w&&!doneOn(i))out.push({key:'m:'+dkey(dayDate(i)),wid:w.id,name:w.name,ex:null,label:'Missed '+DAYS[i]})}
+  wk.forEach(h=>{if(!Array.isArray(h.skipped)||!h.skipped.length)return;const w=workouts.find(x=>x.id===h.wid||x.name===h.split);if(!w)return;
+    const n=h.skipped.length;out.push({key:'p:'+h.id,wid:w.id,name:w.name,ex:h.skipped,label:`${n} exercise${n>1?'s':''} left on ${DAYS[wd(fromKey(h.date))]}`})});
+  return out.filter(o=>!made.has(o.key)&&!drop.has(o.key)&&!planned.has(o.key))}
+// one session from one or more make-ups, exercises in order, no repeats
+function makeupSession(list){const ex=[];const seen=new Set();
+  list.forEach(o=>{const b=buildSession(o.wid,true);const want=o.ex?new Map(o.ex.map(x=>[x.name,x.sets])):null;
+    b.ex.forEach(e=>{if(want&&!want.has(e.name))return;if(seen.has(e.name))return;seen.add(e.name);ex.push(want?{...e,sets:e.sets.slice(0,Math.max(1,want.get(e.name)))}:e)})});
+  const s=buildSession(list[0].wid,true);s.ex=ex;s.split=list.length>1?list.map(o=>o.name).join(' + '):list[0].name;s.makeup=list.map(o=>o.key);return s}
+// start make-ups now; today's own workout, if not done, is queued after
+function startMakeupList(list){if(!list.length)return false;
+  const p=plannedToday();const pDone=hist.some(h=>h.date===dkey(new Date())&&h.wid===p);
+  if(ses&&ses.startedAt&&!ses.finished){planMakeups(list,dkey(new Date()),true);ses.then=list[0].wid;ses.thenMakeup='x:'+dkey(new Date());save();render();toast('Up after this one');return true}
+  ses=makeupSession(list);if(p&&!list.some(o=>o.wid===p)&&!pDone)ses.then=p;
+  focus=null;tab='today';save();render();return true}
+function startMakeup(key){const o=leftovers().find(x=>x.key===key)||Object.values(extras()).flat().find(x=>x&&x.key===key);return o?startMakeupList([o]):false}
+// how many workouts a day would hold
+function dayLoad(i){return (isW(week[i])?1:0)+extraFor(dkey(dayDate(i))).length}
+function planMakeups(list,date,quiet){const X=extras();Object.keys(X).forEach(d=>{if(d<dkey(new Date()))delete X[d]});
+  X[date]=(X[date]||[]).filter(o=>!list.some(n=>n.key===o.key)).concat(list.map(o=>({key:o.key,wid:o.wid,name:o.name,ex:o.ex})));
+  S.set('gym.extra',X);if(date===dkey(new Date())&&ses&&!ses.startedAt&&!ses.finished&&!ses.makeup&&!ses.manual)applyExtras();save();render();
+  if(!quiet)toast(list.length>1?'Make-up planned':list[0].name+' planned')}
+// planning more than MAX_DAY workouts on one day asks first
+function planChecked(list,i){const n=dayLoad(i)+list.length;const go=()=>planMakeups(list,dkey(dayDate(i)));
+  if(n<=MAX_DAY)return go();
+  takeover(`${n} workouts on ${DAYS[i]}?`,'That much in one session wears you down, and form and recovery suffer. Spreading them out is safer.',[
+    {label:'Spread them out',primary:true,fn:()=>leftSheet()},{label:'Plan it anyway',quiet:true,fn:go}])}
+// the days left this week, rest and open days first
+function freeDays(){const t=wd(new Date());const d=[];for(let i=t;i<7;i++)d.push(i);return d}
+function bestDay(){const t=wd(new Date());const f=freeDays().filter(i=>i>t&&!isW(week[i])&&!extraFor(dkey(dayDate(i))).length);return f.length?f[0]:null}
+function dayLabel(i){const t=wd(new Date());const n=week[i];const x=extraFor(dkey(dayDate(i))).length;
+  const base=isW(n)?(workouts.find(w=>w.id===n)||{}).name:n===REST?'Rest':'Open';return base+(x?` + ${x} make-up${x>1?'s':''}`:'')+(i===t?' · today':'')}
+function dayPick(list){const t=wd(new Date());
+  const s=sheet(`<h3>Plan ${list.length>1?'make-up':esc(list[0].name)} for</h3>
+    ${freeDays().map(i=>`<button class="ssrow" data-dp="${i}"><span><b>${i===t?'Today':DAYS[i]}</b><small>${esc(dayLabel(i))}</small></span>${dayLoad(i)+list.length>MAX_DAY?'<span class="sar" style="font-size:13px;color:#e08a5a">Heavy</span>':''}</button>`).join('')}`);
+  s.querySelectorAll('[data-dp]').forEach(b=>b.onclick=()=>{s.remove();planChecked(list,+b.dataset.dp)});return s}
+function leftSheet(){const L=leftovers();const bd=bestDay();const combo=L.slice(0,MAX_DAY);
+  const comboCard=L.length>1&&bd!==null?`<div class="locombo"><b>Combine into one on ${DAYS[bd]}</b><small>${combo.map(o=>esc(o.name)).join(' + ')}${L.length>MAX_DAY?` · the other ${L.length-MAX_DAY} stay here`:''}</small><div class="row" style="margin-top:10px"><button class="btn" data-lcpick>Other day</button><button class="btn w" data-lcplan>Plan it</button></div></div>`:'';
+  const s=sheet(`<h3>Left over</h3><p>Workouts you missed or didn't finish this week.</p>${comboCard}
+    ${L.map(o=>`<div class="lorow"><span><b>${esc(o.name)}</b><small>${o.label}</small></span><button class="btn" data-lopick="${o.key}">Plan</button><button class="btn w" data-lodo="${o.key}">Today</button></div><button class="lodrop" data-lodrop="${o.key}">Drop ${esc(o.name)}</button>`).join('')||'<p>Nothing left over.</p>'}`);
+  const find=k=>L.find(o=>o.key===k);
+  s.querySelectorAll('[data-lodo]').forEach(b=>b.onclick=()=>{s.remove();startMakeupList([find(b.dataset.lodo)])});
+  s.querySelectorAll('[data-lopick]').forEach(b=>b.onclick=()=>{s.remove();sheetBack(dayPick([find(b.dataset.lopick)]),leftSheet)});
+  const cp=s.querySelector('[data-lcplan]');if(cp)cp.onclick=()=>{s.remove();planChecked(combo,bd)};
+  const ck=s.querySelector('[data-lcpick]');if(ck)ck.onclick=()=>{s.remove();sheetBack(dayPick(combo),leftSheet)};
+  s.querySelectorAll('[data-lodrop]').forEach(b=>b.onclick=()=>{S.set('gym.dropped',dropped().concat(b.dataset.lodrop).slice(-60));s.remove();render();if(leftovers().length)leftSheet()});
+  return s}
+// a day with planned make-ups: they become the day's workout, or follow its own
+function applyExtras(){const today=dkey(new Date());const L=extraFor(today);if(!L.length||!ses||ses.startedAt||ses.finished||ses.makeup||ses.manual||ses.xDone)return;ses.xDone=true;
+  const p=plannedToday();const pDone=hist.some(h=>h.date===today&&h.wid===p);
+  if(p&&!pDone){ses.then=L[0].wid;ses.thenMakeup='x:'+today}else ses=makeupSession(L)}
 function schedHTML(){
   const t=wd(new Date());const names=weekNames();const F=FOCUS[focusKey()]||FOCUS.fit;
   const m=weekMonday(),e=dayDate(6);
   const range=m.getMonth()===e.getMonth()?`${MON[m.getMonth()]} ${m.getDate()} to ${e.getDate()}`:`${MON[m.getMonth()]} ${m.getDate()} to ${MON[e.getMonth()]} ${e.getDate()}`;
-  if(schedDay===null)schedDay=t;
-  const empty=names.every(n=>!n);
-  const strip=DAYS.map((d,i)=>{const n=names[i];return `<button data-j="${i}" class="${i===schedDay?'on':''} ${i===t?'tod':''}"><i>${d[0]}</i>${dayDate(i).getDate()}<u style="${n?'background:'+fcol(n):''}"></u></button>`}).join('');
-  const cards=DAYS.map((d,i)=>{const n=names[i];const w=n&&workouts.find(x=>x.name===n);const done=n&&doneOn(i);
-    const tag=i===t?'TODAY':i===t+1?'TOMORROW':i===t-1?'YESTERDAY':'';
-    const list=w?w.ex.slice(0,6).map(x=>`<li>${esc(x.name)}</li>`).join('')+(w.ex.length>6?`<li>+${w.ex.length-6} more</li>`:''):'';
-    let foot='';
-    if(n&&done)foot=`<span class="meta">✓ Done · ${durTxt(done.total)}</span>`;
-    else if(n&&i===t)foot=`<span class="meta">${w?w.ex.length+' exercises · ~'+estMin(w)+' min':''}</span><button class="go" data-sgo>Start</button>`;
-    else if(n&&i<t)foot=`<span class="meta">Not logged</span>`;
-    else if(n&&w)foot=`<span class="meta">${w.ex.length} exercises · ~${estMin(w)} min</span>`;
-    return `<div class="scard${n?'':' rest'}${i<t&&!done?' past':''}" data-k="${i}" ${n?`style="background:${fcol(n)}" data-sopen="${esc(n)}"`:'data-splan'}>
-      <div class="sctop">${tag?`<span class="stag">${tag}</span>`:'<span></span>'}<span class="sd">${DAYS[i].slice(0,3).toUpperCase()} ${dayDate(i).getDate()}</span></div>
-      <div class="snm">${esc(n||'Rest')}</div><ul>${n?list||'<li>No exercises yet</li>':'<li>Recover, walk, stretch</li>'}</ul><div class="sfoot">${foot}</div></div>`}).join('');
-  return `<div class="hdr"><div><h1>Schedule</h1><div class="sub">${F.name} · ${range}</div></div><button class="iconbtn" data-schedset aria-label="Schedule settings">${IC.gear}</button></div>
-  ${empty?`<button class="sempty" data-toplanedit><b>Your week is empty</b><span>Tap to plan it</span></button>`:''}
-  <div class="strip">${strip}</div><div class="scar" id="car">${cards}</div>`;
+  // the whole week as 8 equal tiles: Mon to Sun, then how the week is going
+  let planned=0,done=0,mins=0;
+  const tiles=DAYS.map((d,i)=>{const r=names[i]===REST;const n=r?null:names[i];const w=n&&workouts.find(x=>x.name===n);const dn=doneOn(i);const tod=i===t;
+    if(n){planned++;if(dn){done++;mins+=dn.total/60000}}else if(dn){mins+=dn.total/60000}
+    const xs=i>=t?extraFor(dkey(dayDate(i))):[];
+    let meta='';
+    if(!n)meta=dn?'✓ '+durTxt(dn.total):xs.length?xs.map(o=>o.name).join(' + '):r?'Recover':'Tap to plan';
+    else if(dn)meta='✓ '+durTxt(dn.total);
+    else if(i<t)meta='Not logged';
+    else if(w)meta=!w.ex.length?'No exercises yet':tod?`~${estMin(w)} min`:`${w.ex.length} exercises · ~${estMin(w)} min`;
+    return `<div class="stile${n?'':r?' rest':' open'}${tod?' tod':''}${i<t&&n&&!dn?' past':''}" data-k="${i}" ${n?`data-sopen="${esc(n)}" style="background:${fcol(n)}"`:'data-splan'}>
+      <div class="sttop"><span>${d.slice(0,3)} ${dayDate(i).getDate()}</span>${tod?'<b>Today</b>':''}</div>
+      <div class="stnm">${n?esc(n):xs.length?'Make-up':r?'Rest':'<span class="stplus">+</span>'}</div>${n&&xs.length?`<div class="stx">+ ${xs.map(o=>esc(o.name)).join(' + ')}</div>`:''}
+      <div class="stft"><span class="stmeta">${meta}</span>${n&&tod&&!dn?'<button class="go" data-sgo>Start</button>':''}</div></div>`}).join('');
+  const L=leftovers();
+  const sum=planned||L.length?`<div class="stile ssum"${L.length?' data-left':''}><div class="sttop"><span>This week</span></div><div class="stnm">${planned?done+' of '+planned:L.length+' left'}</div>${L.length?`<div class="stleft"><b>Left over</b> ${L.map(o=>esc(o.name)).join(', ')}</div>`:''}<div class="stft"><span class="stmeta">${mins?durTxt(mins*60000)+' lifted':'workouts done'}</span></div></div>`
+    :`<div class="stile ssum" data-toplanedit><div class="sttop"><span>Your week</span></div><div class="stnm">Plan it</div><div class="stft"><span class="stmeta">Tap any day</span></div></div>`;
+  return `<div class="hdr"><div><h1>Schedule</h1><div class="sub">${F.name} · ${range}</div></div><div class="hbtns"><button class="hpill" data-toplanedit>Edit week</button><button class="iconbtn" data-settings aria-label="Settings">${IC.gear}</button></div></div>
+  <div class="sgrid">${tiles}${sum}</div>`;
 }
-function bindSched(A){
-  const car=A.querySelector('#car');if(!car)return;
-  const cards=[...car.querySelectorAll('.scard')];const days=[...A.querySelectorAll('[data-j]')];
-  // where the scroller has to be for card i to sit in the middle
-  const target=i=>{const c=cards[i];if(!c)return car.scrollLeft;const cr=car.getBoundingClientRect(),r=c.getBoundingClientRect();return car.scrollLeft+(r.left-cr.left)-(car.clientWidth-r.width)/2};
-  const nearest=()=>{const cr=car.getBoundingClientRect();const mid=cr.left+cr.width/2;let best=0,bd=1e9;cards.forEach((c,i)=>{const r=c.getBoundingClientRect();const d=Math.abs(r.left+r.width/2-mid);if(d<bd){bd=d;best=i}});return best};
-  const mark=i=>{if(mark.cur===i)return;mark.cur=i;days.forEach((b,k)=>b.classList.toggle('on',k===i))};
-  let aim=null,aimT=null;
-  const go=(i,smooth)=>{schedDay=i;mark(i);aim=i;clearTimeout(aimT);aimT=setTimeout(()=>{aim=null},smooth?900:50);
-    car.scrollTo({left:target(i),behavior:smooth?'smooth':'auto'})};
-  mark.cur=null;go(schedDay,false);
-  days.forEach((b,k)=>b.onclick=()=>go(k,true));
-  // follow the swipe live, one update per frame
-  let raf=0;car.addEventListener('scroll',()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const n=nearest();
-    if(aim!==null){if(n===aim){clearTimeout(aimT);aimT=setTimeout(()=>{aim=null},120)}return}
-    schedDay=n;mark(n)})},{passive:true});
-  car.addEventListener('scrollend',()=>{aim=null;const n=nearest();schedDay=n;mark(n)});
-}
-function schedSettings(){
-  const F=FOCUS[focusKey()]||FOCUS.fit;
-  const s=sheet(`<h3>Schedule settings</h3>
-    <button class="ssrow big" data-ss="plan"><span class="sic">▦</span><span><b>Plan</b><small>Choose a workout for each day</small></span><span class="sar">›</span></button>
-    <button class="ssrow" data-ss="focus"><span class="sic">◎</span><span><b>Focus</b><small>${F.name}</small></span><span class="sar">›</span></button>
-    <button class="ssrow" data-ss="app"><span class="sic">⚙</span><span><b>App settings</b><small>Units, rest timer, backup</small></span><span class="sar">›</span></button>`);
-  s.querySelector('[data-ss="plan"]').onclick=()=>{s.remove();planMode='edit';planW=null;render();$('#main').scrollTop=0};
-  s.querySelector('[data-ss="focus"]').onclick=()=>{s.remove();sheetBack(focusSheet(),schedSettings)};
-  s.querySelector('[data-ss="app"]').onclick=()=>{s.remove();sheetBack(settingsSheet(),schedSettings)};
-}
+function bindSched(A){}
 function focusSheet(after){
   const fk=focusKey();
   const s=sheet(`<h3>Focus</h3><p>Sets which workouts you see when planning.</p>${Object.entries(FOCUS).map(([k,f])=>`<button class="ssrow ${fk===k?'big':''}" data-fk="${k}"><span><b>${f.name}</b><small>${f.desc}</small></span>${fk===k?'<span class="sar">✓</span>':''}</button>`).join('')}`);
@@ -73,8 +112,8 @@ const planNames=()=>{const fk=focusKey();const inSets=new Set(Object.values(FOCU
   return (FOCUS[fk]||FOCUS.fit).w.concat(workouts.map(w=>w.name).filter(n=>!inSets.has(n)&&!(FOCUS[fk]||FOCUS.fit).w.includes(n)))};
 function planEditorHTML(){
   const d=draft();const t=wd(new Date());const F=FOCUS[focusKey()]||FOCUS.fit;
-  const rows=DAYS.map((dn,i)=>{const n=d[i];return `<button class="dayr${n?'':' rest'}" data-pday="${i}" ${n?`style="background:${fcol(n)}"`:''}>
-    <span class="dl"><b>${dn.slice(0,3).toUpperCase()}</b><span>${dayDate(i).getDate()}</span></span><span class="dwn">${esc(n||'Rest')}</span>${i===t?'<span class="dtt">TODAY</span>':''}</button>`}).join('');
+  const rows=DAYS.map((dn,i)=>{const r=d[i]===REST;const n=r?null:d[i];return `<button class="dayr${n?'':' rest'}${!n&&!r?' open':''}" data-pday="${i}" ${n?`style="background:${fcol(n)}"`:''}>
+    <span class="dl"><b>${dn.slice(0,3).toUpperCase()}</b><span>${dayDate(i).getDate()}</span></span><span class="dwn">${n?esc(n):r?'Rest':'Open'}</span>${i===t?'<span class="dtt">TODAY</span>':''}</button>`}).join('');
   return `<div class="hdr"><button class="back" data-backsched>${IC.back}Schedule</button></div>
   <div class="pad"><h1 class="ptitle">Plan</h1>
     <div class="focusrow">Focus <button class="dd" data-pfocus>${F.name}<span class="car">▼</span></button></div>
@@ -89,9 +128,9 @@ function planDayPicker(i){
   const d=draft();const names=planNames();const cur=d[i];
   const s=sheet(`<h3>${DAYS[i]} ${dayDate(i).getDate()}</h3>
     <div class="wchips">${names.map(n=>`<button class="wchip ${cur===n?'on':''}" data-pickw="${esc(n)}" style="background:${fcol(n)}">${esc(n)}</button>`).join('')}
-    <button class="wchip rest ${cur?'':'on'}" data-pickw="">Rest</button><button class="wchip rest" data-pnew>+ New</button></div>
-    ${cur?`<button class="alink" data-pedit style="margin-top:14px">Edit ${esc(cur)} exercises</button>`:''}`);
-  s.querySelectorAll('[data-pickw]').forEach(b=>b.onclick=()=>{d[i]=b.dataset.pickw||null;s.remove();render();const r=$(`[data-pday="${i}"]`);r&&r.classList.add('flash')});
+    <button class="wchip rest ${cur===REST?'on':''}" data-pickd="${REST}">Rest</button><button class="wchip rest ${cur?'':'on'}" data-pickd="">Open</button><button class="wchip rest" data-pnew>+ New</button></div>
+    ${isW(cur)?`<button class="alink" data-pedit style="margin-top:14px">Edit ${esc(cur)} exercises</button>`:''}`);
+  s.querySelectorAll('[data-pickw],[data-pickd]').forEach(b=>b.onclick=()=>{d[i]=b.dataset.pickw||b.dataset.pickd||null;s.remove();render();const r=$(`[data-pday="${i}"]`);r&&r.classList.add('flash')});
   s.querySelector('[data-pnew]').onclick=()=>{s.remove();let k=1,nm='New workout';while(workouts.some(w=>w.name===nm))nm='New workout '+(++k);
     const w={id:nid(),name:nm,ex:[]};workouts.push(w);d[i]=nm;save();planW=w.id;planOpen=undefined;render();const n=$('[data-wname]');if(n){n.focus();n.select()}};
   const ed=s.querySelector('[data-pedit]');if(ed)ed.onclick=()=>{s.remove();openWorkoutByName(cur)};
@@ -128,7 +167,7 @@ function exPicker(o){ // o:{title,color,list:()=>[names],add:(libItem)=>void,rem
     if(t||st.g){const L=search();const have=new Set(list.map(n=>n.toLowerCase()));
       body=(st.g&&!t?`<div class="xdrill" style="background:${GC[st.g]}"><button data-xg="" aria-label="Back to muscles">‹</button><b>${st.g}</b><span>${L.length}</span></div>
         <div class="xeq">${EQ.map(e=>`<button data-xeq="${e}" class="${st.eq===e?'on':''}">${e}</button>`).join('')}</div>`:'')+
-        `<div class="xlst">${L.map(x=>{const on=have.has(x.name.toLowerCase());return `<button class="xrow${on?' on':''}" data-xt="${esc(x.name)}"><span class="xgd" style="background:${GC[x.group]||GC.Other}"></span><span class="xrt"><b>${hl(x.name)}</b><small>${x.group} · ${x.equip} · ${x.sets}×${x.reps}</small></span><span class="xpl">${on?'✓':'+'}</span></button>`}).join('')}
+        `<div class="xlst">${L.map(x=>{const on=have.has(x.name.toLowerCase());return `<button class="xrow${on?' on':''}" data-xt="${esc(x.name)}"><span class="xgd" style="background:${GC[x.group]||GC.Other}"></span><span class="xrt"><b>${hl(x.name)}</b><small>${x.group} · ${x.equip} · ${x.sets}×${x.reps}</small></span><span class="xpl">${on?'<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>':'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>'}</span></button>`}).join('')}
         ${!L.length&&!t?'<div class="empty" style="padding:20px">Nothing here with that gear.</div>':''}
         ${t&&!LIBMAP[t.toLowerCase()]?`<button class="xcustom" data-xcustom><span>＋</span><span><b>Add "${esc(t)}"</b><small>Save it as your own exercise</small></span></button>`:''}</div>`}
     else body=`<div class="xlst"><div class="xtiles">${GROUPS.map(g=>{const n=list.filter(x=>libOf(x).group===g).length;const ex=[...new Set(LIB.filter(x=>x.group===g&&x.pop).map(x=>x.name.replace(/\b(Barbell|Dumbbell|Machine|Cable|Incline|Seated|Standing|Lying)\b\s*/g,'').trim()).filter(Boolean))].slice(0,2).join(', ');

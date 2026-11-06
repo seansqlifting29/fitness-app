@@ -22,8 +22,8 @@ So I built a tracker that records all of that while I train, and charts that sho
 
 | Train | Plan | Analyze |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/timer-rest.png" width="240" alt="Rest timer with weight and reps entry"> | <img src="docs/screenshots/schedule.png" width="240" alt="Swipeable weekly schedule"> | <img src="docs/screenshots/overview.png" width="240" alt="Analytics overview"> |
-| Today's workout is a checklist. One button runs each set: start, finish, rest, repeat. Time under tension and rest are recorded for every set. | Your week as swipeable color blocks with today in the middle. Tap a day to pick its workout, and build workouts from a searchable exercise library. | Overview shows this week against your plan, which lifts are moving, and medals dated from your history. Advanced looks at what changes your strength. Tap any point to see the sets behind it. |
+| <img src="docs/screenshots/timer-rest.png" width="240" alt="Rest timer with weight and reps entry"> | <img src="docs/screenshots/schedule.png" width="240" alt="The week as tiles on one screen"> | <img src="docs/screenshots/overview.png" width="240" alt="Analytics overview"> |
+| Today's workout is a checklist. One button runs each set: start, finish, rest, repeat. You get a warm up before the first set and 10 seconds to get set before lifting time starts. Pause stops every clock, and leaving mid-workout asks to pause or end. Time under tension and rest are recorded for every set. | Your whole week as color tiles on one screen, with today outlined and a tile for how the week is going. Workouts you missed or cut short show there as left over. Do one today, plan it for another day, or combine up to three into one make-up day. Tap a day to open its workout, and build workouts from a searchable exercise library. | Overview has one pie you can switch between plan kept, where your gym time goes, sets by muscle, and work to rest. Medals only count showing up, and each is dated from your history. Advanced looks at what changes your strength. Tap any point to see the sets behind it. |
 
 Also: installs to the home screen, works with no signal, optional cloud sync across devices, and a back gesture that works from every screen.
 
@@ -43,13 +43,13 @@ Using it changed a lot:
 |---|---|---|
 | Five timer screens: workout, input, rest, transition, finished | Three: lifting, rest, next station | Logging happens during rest anyway, so a separate input timer was one more thing to tap. |
 | Popups to confirm pausing and redoing a set | A single Undo | Dialogs mid-set slowed me down. |
-| A list of days | A swipeable week with today centered | The list made it hard to see where you were in the week. |
+| A list of days | Color tiles, the whole week on one screen | The list made it hard to see where you were in the week. A swipeable version fixed that but was awkward mid-session, so now every day is a tile and nothing scrolls. |
 | A history tab | Analytics | A list of past workouts didn't tell me anything. Charts of what's changing did. |
 | Target workout length and transition settings | A rest ratio | Rest is set length times a ratio, so harder sets get more rest on their own. |
 
 ![The app today: checklist, lifting timer, rest timer, weekly schedule and exercise picker](docs/screenshots/hero-workout.png)
 
-Most screens also went through a round of side-by-side concepts. The schedule tried several layouts before landing on color blocks with today in the middle. Drag and drop in the plan editor felt fiddly on a phone, so it became tap a day, pick a workout. Analytics started with too many points and too much text, and ended with thin lines, colored points, and insights you only read when you tap. I tested paper, grey, charcoal and cream themes across every screen before going back to off-black.
+Most screens also went through a round of side-by-side concepts. The schedule tried several layouts, went to swipeable color blocks, then became a grid of tiles after my first real workouts. Drag and drop in the plan editor felt fiddly on a phone, so it became tap a day, pick a workout. Analytics started with too many points and too much text, and ended with thin lines, colored points, and insights you only read when you tap. I tested paper, grey, charcoal and cream themes across every screen before going back to off-black.
 
 ## How the numbers work
 
@@ -84,6 +84,7 @@ flowchart LR
 - **Offline first.** Gyms have bad signal, so the phone keeps the working copy and nothing waits on the network. Changes queue and push when there's a connection.
 - **Workouts can't be overwritten.** Plan and settings are one document per item, where the newest write wins. Each workout is its own document, merged by id, so two devices never overwrite each other's sessions.
 - **Cheap by design.** Only items whose content changed are uploaded, tracked with a hash per item. Pulls only ask for documents newer than the last sync.
+- **Works on a new phone.** Sign in or create an account right from the welcome screen, and your plan and history come down before the app opens.
 - **Private.** Email sign-in through Firebase Auth, and rules that only let you read and write your own path:
   ```
   match /users/{uid}/{doc=**} {
@@ -119,7 +120,12 @@ Tests:
 ```bash
 pip install playwright && playwright install chromium
 python3 tests/smoke.py
+python3 tests/accounts.py
 python3 tests/navigation.py
+python3 tests/plan_days.py
+python3 tests/workout_screen.py
+python3 tests/leftover.py
+python3 tests/overview_pie.py
 python3 tests/sync.py
 ```
 
