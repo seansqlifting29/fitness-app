@@ -147,7 +147,7 @@ flowchart LR
 - A service worker and web app manifest, so it installs and works offline.
 - One rule decides what "back" means on every screen, wired to the phone's back gesture, so you can't get stuck.
 - The preview runs in its own storage space, so it can never touch a real user's data on the same site.
-- Playwright tests (13 files): the workout loop, back navigation, scheduling edge cases like editing a week after you've trained, cardio, analytics numbers checked against the raw history, the new user tour, and two devices syncing through a stand-in for Firebase, including a workout logged offline.
+- Playwright tests (14 files): the workout loop, back navigation, scheduling edge cases like editing a week after you've trained, cardio, analytics numbers checked against the raw history, the new user tour, erasing and starting fresh, and two devices syncing through a stand-in for Firebase, including a workout logged offline.
 
 **How I built it:** I designed it in Figma first, then used Claude as a coding partner. I set the direction, tested in the gym and made the calls on what stayed and what went. Claude wrote most of the code.
 
@@ -181,6 +181,7 @@ python3 tests/swap_sync.py
 python3 tests/cardio_lock.py
 python3 tests/unit.py
 python3 tests/tour.py
+python3 tests/fresh_start.py
 python3 tests/sync.py
 ```
 

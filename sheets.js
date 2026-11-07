@@ -34,6 +34,14 @@ function editSet(e,j){
   s.querySelector('[data-save]').onclick=()=>{const w=Math.max(0,parseFloat(iw.value)||0),r=Math.max(0,parseInt(ir.value)||0);
     const all=s.querySelector('#rest')?.checked;ex.sets.forEach((x,k)=>{if(k===j||(all&&k>j&&!x.done)){x.w=w;x.r=r}});save();s.remove();render()};
 }
+// Erase starts you over exactly like a first open: every app key goes (plan, history, settings,
+// week changes, make-ups, setup times, sync state), you're signed out, and the page reloads.
+// The sample year's own storage is left alone.
+function eraseAll(){window.__wiping=true;
+  const wipe=()=>{try{Object.keys(localStorage).filter(k=>/^(gym3?\.|fit\.)/.test(k)).forEach(k=>localStorage.removeItem(k))}catch(e){}
+    // after the confirm box has closed: closing it steps the history back, which would cancel a reload started now
+    setTimeout(()=>location.reload(),400)};
+  Promise.race([Cloud.signOut().catch(()=>{}),new Promise(r=>setTimeout(r,1500))]).then(wipe,wipe)}
 function settingsSheet(){
   const s=sheet(`<h3>Settings</h3>
     <div class="lbl" style="margin-top:10px">You</div>
@@ -63,7 +71,7 @@ function settingsSheet(){
   rdesc();
   s.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{cfg.restMode=b.dataset.rm;save();s.querySelectorAll('[data-rm]').forEach(x=>x.classList.toggle('on',x===b));rdesc()});
   s.querySelectorAll('[data-rr]').forEach(b=>b.onclick=()=>{cfg.ratio=Math.min(10,Math.max(1,cfg.ratio+ +b.dataset.rr));save();rdesc()});
-  s.querySelector('[data-wipe]').onclick=()=>{s.remove();confirmBox('Erase everything?','Your plan, history and current workout will be deleted from this device.','Erase',()=>{['gym.me','gym.plan','gym.workouts','gym.week','gym.blocks','gym.hist','gym3.session','gym.cfg','fit.user'].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});Cloud.signOut().catch(()=>{});me=null;{const m=fromDays(starterPlan());workouts=m.ws;week=m.wk}hist=[];blocks=[];ses=null;render()})};
+  s.querySelector('[data-wipe]').onclick=()=>{s.remove();confirmBox('Erase everything?','Your plan, history and current workout will be deleted from this device.','Erase',eraseAll)};
   const cb=s.querySelector('[data-cloud]');if(cb){const st=Cloud.status();s.querySelector('#clst').textContent=st.email?(st.state==='ok'?'On · '+st.email:st.state==='offline'?'Offline · syncs later':st.state==='error'?'Needs attention':'Syncing…'):'Off. Use your data on any device';
     cb.onclick=()=>{s.remove();sheetBack(cloudSheet(),settingsSheet)}}
   return s;
