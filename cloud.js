@@ -3,7 +3,7 @@
    Changes are queued and pushed when there's a connection; changes from other devices
    are pulled when the app opens or comes back into view.
    Plan, settings etc: newest write wins per item. Workouts: merged, one record each. */
-const SYNC_KEYS=['gym.me','gym.workouts','gym.week','gym.cfg','gym.focus','gym.charts2','gym.anEx','gym.customEx','gym.dropped','gym.extra','gym.pie'];
+const SYNC_KEYS=['gym.me','gym.workouts','gym.week','gym.cfg','gym.focus','gym.charts2','gym.anEx','gym.customEx','gym.dropped','gym.extra','gym.pie','gym.swaps','gym.dayOver','gym.setupAdd','gym.setupAdj','gym.setupNote','gym.setupT','gym.setupTaps'];
 const Cloud=(function(){
   const CFG=window.FB_CONFIG||null;const ON=!!CFG&&/^https?:$/.test(location.protocol)&&window.top===window;
   let api=null,user=null,state='off',err='',busy=false,again=false,kickT=null,listeners=[];

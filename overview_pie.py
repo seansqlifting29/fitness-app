@@ -15,13 +15,24 @@ async def main():
     ctx=await b.new_context(viewport={'width':390,'height':844},service_workers='block');pg=await ctx.new_page();pg.on('pageerror',lambda e:errs.append(str(e)))
     await pg.goto(BASE+'preview.html');await pg.wait_for_timeout(1200)
     ok(await pg.locator('.an-pie').count()==1 and await pg.locator('.an-ring').count()==0,'one pie replaces the two rings')
-    ok(await pg.locator('.an-pchips button').count()==4,'four chips under the pie')
+    ok(await pg.locator('.an-pchips button').count()==5,'five chips under the pie')
     # gym time: check the headline against the raw history
     await pg.click('[data-pie=time]');await pg.wait_for_timeout(200)
     exp=await pg.evaluate("""(()=>{const c=Date.now()-28*864e5;const R=hist.filter(h=>(h.start||0)>=c);const T=R.reduce((a,h)=>a+h.total,0),U=R.reduce((a,h)=>a+h.tut,0),Rs=R.reduce((a,h)=>a+h.rest,0);
       return [Math.round(T/R.length/60000),Math.round(U/T*100)]})()""")
     txt=await pg.locator('.an-pie').inner_text()
     ok(f"{exp[0]}m" in txt and f"Lifting {exp[1]}%" in txt,f'gym time matches the history ({exp[0]} min, lifting {exp[1]}%)')
+    cexp=await pg.evaluate("""(()=>{const c=Date.now()-28*864e5;const R=hist.filter(h=>(h.start||0)>=c);const T=R.reduce((a,h)=>a+h.total,0),C=R.reduce((a,h)=>a+(h.cardio?h.cardio.ms:0),0);return Math.round(C/T*100)})()""")
+    ok(f"Cardio {cexp}%" in txt,f'gym time has a cardio slice from the logged cardio ({cexp}%)')
+    # cardio: minutes by machine, from the history
+    await pg.click('[data-pie=cardio]');await pg.wait_for_timeout(200)
+    cm=await pg.evaluate("""(()=>{const c=Date.now()-28*864e5;const L=hist.filter(h=>(h.start||0)>=c&&h.cardio);const by={};L.forEach(h=>by[h.cardio.eq]=(by[h.cardio.eq]||0)+h.cardio.ms);
+      const T=Object.values(by).reduce((a,b)=>a+b,0);const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];return [Math.round(T/6e4),top[0],Math.round(top[1]/T*100),L.length]})()""")
+    ctxt=await pg.locator('.an-pie').inner_text()
+    ok(str(cm[0]) in ctxt and 'cardio min' in ctxt and f"{cm[1]} is {cm[2]}%" in ctxt and f"{cm[3]} sessions" in ctxt,f'cardio pie matches the history ({cm})')
+    ok(await pg.locator('[data-card=cardio]').count()==1,'Overview has a cardio chart')
+    wk=await pg.evaluate("""(()=>{const now=Math.max(Date.now(),...hist.map(h=>h.start+h.total));const a=now-7*864e5*12;const L=hist.filter(h=>h.start>a&&h.start<=now&&h.cardio);return Math.round(L.reduce((t,h)=>t+h.cardio.ms,0)/6e4/12)})()""")
+    ok(f"{wk} min a week" in await pg.locator('[data-card=cardio]').inner_text(),f'cardio chart average matches the history ({wk} min a week)')
     await pg.click('[data-pie=ratio]');await pg.wait_for_timeout(200);ok('1:' in await pg.locator('.an-pie').inner_text(),'work to rest shows a ratio')
     await pg.click('[data-pie=muscle]');await pg.wait_for_timeout(200);ok('sets' in await pg.locator('.an-pie').inner_text(),'muscles shows sets by group')
     await pg.reload();await pg.wait_for_timeout(1200)

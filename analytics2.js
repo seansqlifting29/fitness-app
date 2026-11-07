@@ -1,8 +1,8 @@
 (function(){
 /* ===== Analytics: Overview / Advanced, computed from your logged sets ===== */
 (function(){const st=document.createElement('style');st.textContent=`
-.an-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px}
-.an-hd h1{font-size:30px;font-weight:800;letter-spacing:-.6px;display:flex;align-items:center;gap:10px}
+.an-hd{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 20px 10px}
+.an-hd h1{font-size:24px;font-weight:800;letter-spacing:-.5px;line-height:38px;display:flex;align-items:center;gap:10px}
 .an-sample{font-size:10.5px;font-weight:900;letter-spacing:.8px;color:var(--t3);border:1px solid #3a3a37;border-radius:8px;padding:3px 6px;cursor:pointer}
 .an-editb{background:var(--card2);border-radius:14px;padding:8px 14px;font-weight:800;font-size:14px;color:var(--t2)}
 .an-editb.on{background:var(--t1);color:#111}
@@ -100,13 +100,14 @@ const DAY=864e5;const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN;
 const e1rm=s=>s.w*(1+s.r/30);// Epley
 const MONA=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 let HIST=[],SETS=[],LIFTS=[],LCOL={},NOW=Date.now(),SPAN_M=0,anKey='';
+const CCOL='#c98500',CPAL=['#c98500','#3987e5','#d55181','#9085e9','#199e70','#e66767','#008300','#d95926'];
 const PAL=['#3987e5','#d95926','#199e70','#c98500','#d55181','#9085e9','#e66767','#008300'];
 const GCOL={Chest:'#3987e5',Back:'#d95926',Legs:'#199e70',Shoulders:'#c98500',Arms:'#d55181',Core:'#9085e9',Glutes:'#e66767'};
 const monthIdx=t=>{const d=new Date(t),s=new Date(HIST[0].start);return (d.getFullYear()-s.getFullYear())*12+d.getMonth()-s.getMonth()};
 const monthName=i=>{const s=new Date(HIST[0].start);const d=new Date(s.getFullYear(),s.getMonth()+i,1);return MONA[d.getMonth()]+(SPAN_M>=12&&(i===0||i===SPAN_M)?" '"+String(d.getFullYear()).slice(2):'')};
 // rebuild the per-set table whenever history changes
 function anRefresh(){const key=hist.length+':'+(hist.length?(hist[hist.length-1].id||'')+(hist[hist.length-1].start||''):'');if(key===anKey)return;anKey=key;
-  HIST=hist.filter(h=>h&&Array.isArray(h.ex)&&h.ex.length).map(h=>{const st=h.start||fromKey(h.date).getTime()+12*36e5;return{start:st,end:st+(h.total||0),split:h.split,ex:h.ex,total:+h.total||0,tut:+h.tut||0,rest:+h.rest||0,warm:+h.warm||0,makeup:h.makeup||null}}).sort((a,b)=>a.start-b.start);
+  HIST=hist.filter(h=>h&&Array.isArray(h.ex)&&h.ex.length).map(h=>{const st=h.start||fromKey(h.date).getTime()+12*36e5;return{start:st,end:st+(h.total||0),split:h.split,ex:h.ex,total:+h.total||0,tut:+h.tut||0,rest:+h.rest||0,warm:+h.warm||0,makeup:h.makeup||null,cardio:h.cardio&&+h.cardio.ms>0?{eq:h.cardio.eq||'Cardio',ms:+h.cardio.ms,plan:+h.cardio.plan||0}:null}}).sort((a,b)=>a.start-b.start);
   NOW=Math.max(Date.now(),HIST.length?HIST[HIST.length-1].end:0);SPAN_M=HIST.length?monthIdx(HIST[HIST.length-1].start):0;
   const rows=[];HIST.forEach((S,si)=>{const gapD=si?Math.round((new Date(S.start).setHours(0,0,0,0)-new Date(HIST[si-1].start).setHours(0,0,0,0))/DAY):null;const hour=new Date(S.start).getHours()+new Date(S.start).getMinutes()/60;
     S.ex.forEach(E=>(E.sets||[]).forEach((s,i)=>{if(!(s.r>0))return;const prev=i?E.sets[i-1]:null;rows.push({si,start:S.start,hour,gapD,ex:E.name,group:groupOf(E.name),set:i+1,w:+s.w||0,r:s.r,tut:(s.tut||0)/1000,rest:s.rest?s.rest/1000:null,
@@ -121,9 +122,11 @@ let tab='overview',ex=S.get('gym.anEx',null),edit=false;
 // chart lists per tab; older Overview/Strength/Deep layouts carry over
 const lists=(()=>{const n=S.get('gym.charts2',null);if(n&&Array.isArray(n.overview)&&Array.isArray(n.advanced))return n;
   const o=S.get('gym.charts',null)||{};const uniq=a=>[...new Set(a)];
-  const ov=Array.isArray(o.general)||Array.isArray(o.strength)?uniq([...(o.general||[]),...(o.strength||[])]):['consist','lifts','prog','rate','gymtime','split','muscle'];
+  const ov=Array.isArray(o.general)||Array.isArray(o.strength)?uniq([...(o.general||[]),...(o.strength||[])]):['consist','lifts','prog','rate','gymtime','split','cardio','muscle'];
   return{overview:ov,advanced:Array.isArray(o.deep)?o.deep:['tens','len','rest','custom:week:e1']}})();
 const saveLists=()=>S.set('gym.charts2',lists);
+// the cardio chart joins Overview once for people who set up their charts before it existed
+if(!lists.overview.includes('cardio')&&!S.get('gym.cardioCard',false)){const i=lists.overview.indexOf('split');lists.overview.splice(i>=0?i+1:lists.overview.length,0,'cardio');S.set('gym.cardioCard',true);saveLists()}
 function spearman(xs,ys){const rk=a=>{const idx=a.map((v,i)=>[v,i]).sort((p,q)=>p[0]-q[0]);const r=new Array(a.length);for(let i=0;i<idx.length;){let j=i;while(j+1<idx.length&&idx[j+1][0]===idx[i][0])j++;for(let k=i;k<=j;k++)r[idx[k][1]]=(i+j)/2;i=j+1}return r};
   const a=rk(xs),b=rk(ys),ma=avg(a),mb=avg(b);let n=0,da=0,db=0;for(let i=0;i<a.length;i++){n+=(a[i]-ma)*(b[i]-mb);da+=(a[i]-ma)**2;db+=(b[i]-mb)**2}return da&&db?n/Math.sqrt(da*db):0}
 const linkWord=r=>{const a=Math.abs(r);return a<.1?'no clear':a<.3?'a weak':a<.5?'a moderate':'a strong'};
@@ -183,6 +186,15 @@ const CARDS={
       return{k:'CONSISTENCY',h:`${p.x===11?'This week':(11-p.x)+' weeks ago'}: ${ss.length} session${ss.length===1?'':'s'}`,rows:ss.map(S=>[fmtDay(S.start),S.split,Math.round((S.end-S.start)/6e4)+' min'])}}}],
       xr:[0,11],yt:[0,Math.max(4,best.y)],xt:[0,3,6,9,11],xfmt:i=>i===11?'Now':'-'+(11-i)+'w',yfmt:v=>v,crit:[{p:best,label:best.y+' sessions'}],
       ins:{h:`You've averaged ${av.toFixed(1)} sessions a week over the last 12 weeks.`,facts:[[wk.filter(p=>p.y>=3).length+'/12','weeks with 3 or more sessions'],[longest+' wk','longest run of 3+ a week']],p:['Each point is one week, counted Monday to Sunday back from your latest session.'],n:wk.reduce((a,p)=>a+p.y,0)+' sessions'}}}},
+  cardio:{tab:'overview',name:'Cardio',desc:'Minutes after your lifts each week, last 12 weeks',hex:CCOL,make(){
+    const wk=[];for(let w=11;w>=0;w--){const a=NOW-7*DAY*(w+1),b=NOW-7*DAY*w;const ss=HIST.filter(S=>S.start>a&&S.start<=b&&S.cardio);wk.push({x:11-w,y:Math.round(ss.reduce((t,S)=>t+S.cardio.ms,0)/6e4),ss})}
+    const all=wk.flatMap(p=>p.ss);const av=avg(wk.map(p=>p.y));const best=wk.reduce((a,b)=>b.y>a.y?b:a,wk[0]);
+    const planned=all.filter(S=>S.cardio.plan>0);const kept=planned.filter(S=>S.cardio.ms>=S.cardio.plan*.95).length;
+    const by={};all.forEach(S=>{by[S.cardio.eq]=(by[S.cardio.eq]||0)+S.cardio.ms});const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];
+    const wkName=x=>x===11?'This week':(11-x)+' weeks ago';
+    return{k:'CARDIO',h:`${Math.round(av)} min a week`,ht:140,series:[{pts:wk,tip:p=>`<b>${wkName(p.x)}</b><br>${p.y} min · ${p.ss.length} session${p.ss.length===1?'':'s'}`,drill:p=>({k:'CARDIO',h:`${wkName(p.x)}: ${p.y} min`,rows:p.ss.map(S=>[fmtDay(S.start),S.cardio.eq,Math.round(S.cardio.ms/6e4)+(S.cardio.plan?' of '+Math.round(S.cardio.plan/6e4):'')+' min'])})}],
+      xr:[0,11],yt:[0,Math.max(20,best.y)],xt:[0,3,6,9,11],xfmt:i=>i===11?'Now':'-'+(11-i)+'w',yfmt:v=>v,crit:best.y?[{p:best,label:best.y+' min'}]:[],
+      ins:{h:`You've averaged ${Math.round(av)} minutes of cardio a week over the last 12 weeks.`,facts:[[wk.filter(p=>p.y>0).length+'/12','weeks with cardio'],[planned.length?pct(kept,planned.length)+'%':'–','of sessions you did the full time'],[top?Math.round(top[1]/6e4)+' min':'–',top?'on the '+top[0].toLowerCase()+', your most used':'']],p:['Cardio is timed from Start to Done on the cardio page after your lifts. Each point is one week, counted back from your latest session.'],n:all.length+' cardio sessions'}}}},
   gymtime:{tab:'overview',name:'Gym time',desc:'Average session length each month',hex:'#3987e5',make(){
     const mo={};HIST.forEach(S=>{const m=monthIdx(S.start);(mo[m]=mo[m]||[]).push((S.end-S.start)/6e4)});const pts=Object.entries(mo).map(([m,a])=>({x:+m,y:avg(a),n:a.length})).sort((a,b)=>a.x-b.x);
     const f=pts[0],l=pts[pts.length-1];const fast=pts.reduce((a,b)=>b.y<a.y?b:a,pts[0]);const d=Math.round(f.y-l.y);
@@ -191,11 +203,11 @@ const CARDS={
       xr:[f.x,l.x],xt:[f.x,Math.round((f.x+l.x)/2),l.x],xfmt:i=>monthName(i),yfmt:v=>v,crit:[{p:fast,label:'Shortest'}],
       ins:{h:`Your sessions averaged ${Math.round(l.y)} minutes in ${monthName(l.x)}, ${d===0?'the same as':(Math.abs(d)+(Math.abs(d)===1?' minute ':' minutes ')+(d>0?'shorter':'longer')+' than')} in ${monthName(f.x)}.`,facts:[[Math.round(fast.y)+' min',monthName(fast.x)+', your shortest month'],[Math.round(avg(HIST.map(S=>(S.end-S.start)/6e4)))+' min','average over the year']],p:['Session length runs from when you start your first set timer to when you finish.'],n:HIST.length+' sessions'}}}},
   split:{tab:'overview',name:'Where time goes',desc:'Lifting, resting and everything else',hex:'#d95926',make(){
-    const r=HIST.slice(-12);const per=r.map(S=>{const all=S.ex.flatMap(E=>E.sets);const lift=all.reduce((a,s)=>a+s.tut,0)/6e4,rest=all.reduce((a,s)=>a+(s.rest||0),0)/6e4,tot=(S.end-S.start)/6e4;return{lift,rest,other:tot-lift-rest,tot}});
-    const L=avg(per.map(p=>p.lift)),R=avg(per.map(p=>p.rest)),O=avg(per.map(p=>p.other)),T=L+R+O;const parts=[['Lifting','#199e70',L],['Resting','#d95926',R],['Other','#3987e5',O]];
-    return{k:'WHERE TIME GOES',h:`${Math.round(R/T*100)}% resting`,custom:`<div class="an-segbar">${parts.map(([n,c,v])=>`<div style="flex:${v};background:${c}" data-tip="<b>${n}</b><br>${v.toFixed(1)} min a session · ${Math.round(v/T*100)}%<br><small>Tap to see each session</small>" data-drill="${regDrill(()=>({k:'WHERE TIME GOES',h:'Your last 12 sessions',html:`<div style=\"display:flex;flex-direction:column;gap:7px;margin-bottom:12px\">${r.map((S,i)=>{const q=per[i];return `<div style=\"display:flex;align-items:center;gap:10px\"><span style=\"width:84px;font-size:12px;font-weight:700;color:#8a8980\">${fmtDate(S.start)}</span><div style=\"flex:1;display:flex;gap:2px;height:16px\">${[[q.lift,'#199e70'],[q.rest,'#d95926'],[q.other,'#3987e5']].map(([v,c])=>`<div style=\"flex:${v};background:${c};border-radius:3px\"></div>`).join('')}</div><span style=\"width:44px;text-align:right;font-size:12px;font-weight:800\">${Math.round(q.tot)}m</span></div>`}).join('')}</div>`}))}"></div>`).join('')}</div>
+    const r=HIST.slice(-12);const per=r.map(S=>{const all=S.ex.flatMap(E=>E.sets);const lift=all.reduce((a,s)=>a+s.tut,0)/6e4,rest=all.reduce((a,s)=>a+(s.rest||0),0)/6e4,tot=(S.end-S.start)/6e4,cardio=S.cardio?S.cardio.ms/6e4:0;return{lift,rest,cardio,other:Math.max(0,tot-lift-rest-cardio),tot}});
+    const L=avg(per.map(p=>p.lift)),R=avg(per.map(p=>p.rest)),CA=avg(per.map(p=>p.cardio)),O=avg(per.map(p=>p.other)),T=L+R+CA+O;const parts=[['Lifting','#199e70',L],['Resting','#d95926',R],['Other','#3987e5',O]];if(CA>0)parts.push(['Cardio',CCOL,CA]);
+    return{k:'WHERE TIME GOES',h:`${Math.round(R/T*100)}% resting`,custom:`<div class="an-segbar">${parts.map(([n,c,v])=>`<div style="flex:${v};background:${c}" data-tip="<b>${n}</b><br>${v.toFixed(1)} min a session · ${Math.round(v/T*100)}%<br><small>Tap to see each session</small>" data-drill="${regDrill(()=>({k:'WHERE TIME GOES',h:'Your last 12 sessions',html:`<div style=\"display:flex;flex-direction:column;gap:7px;margin-bottom:12px\">${r.map((S,i)=>{const q=per[i];return `<div style=\"display:flex;align-items:center;gap:10px\"><span style=\"width:84px;font-size:12px;font-weight:700;color:#8a8980\">${fmtDate(S.start)}</span><div style=\"flex:1;display:flex;gap:2px;height:16px\">${[[q.lift,'#199e70'],[q.rest,'#d95926'],[q.other,'#3987e5'],[q.cardio,CCOL]].map(([v,c])=>`<div style=\"flex:${v};background:${c};border-radius:3px\"></div>`).join('')}</div><span style=\"width:44px;text-align:right;font-size:12px;font-weight:800\">${Math.round(q.tot)}m</span></div>`}).join('')}</div>`}))}"></div>`).join('')}</div>
       <div class="an-seglab">${parts.map(([n,c,v])=>`<div><i style="background:${c}"></i>${n}<b>${Math.round(v)} min</b></div>`).join('')}</div>`,
-      ins:{h:`For every minute under tension you rested ${(R/L).toFixed(1)} minutes.`,facts:[[L.toFixed(1)+' min','lifting a session'],[R.toFixed(1)+' min','resting between sets']],p:['Lifting is time under tension from the set timer. Resting is the rest timer between sets. Other is warming up, moving between stations and setting up.'],n:'last 12 sessions'}}}},
+      ins:{h:`For every minute under tension you rested ${(R/L).toFixed(1)} minutes.`,facts:[[L.toFixed(1)+' min','lifting a session'],[R.toFixed(1)+' min','resting between sets']],p:['Lifting is time under tension from the set timer. Resting is the rest timer between sets. Other is warming up, moving between stations and setting up. Cardio is the cardio timer after your lifts.'],n:'last 12 sessions'}}}},
   prog:{tab:'overview',perLift:1,name:'Estimated max',desc:'Your best set each month, as a one-rep max',hex:null,make(){
     const rows=exSets();const mo={};rows.forEach(r=>{const m=monthIdx(r.start);mo[m]=Math.max(mo[m]||0,r.e1)});const pts=Object.entries(mo).map(([m,y])=>({x:+m,y})).sort((a,b)=>a.x-b.x);
     let run=0,prs=0;const bySess={};rows.forEach(r=>bySess[r.si]=Math.max(bySess[r.si]||0,r.e1));Object.keys(bySess).sort((a,b)=>a-b).forEach(k=>{if(bySess[k]>run){if(run)prs++;run=bySess[k]}});
@@ -319,6 +331,7 @@ function customMake(xk,yk){if(!ALLOWED[xk])xk='rest';if(!ALLOWED[xk].includes(yk
 const timedEx=()=>exSets().filter(r=>r.tut>0);
 const NEEDS={
   consist:()=>[HIST.length,1,'workout'],
+  cardio:()=>[HIST.filter(S=>S.cardio).length,1,'workout with cardio'],
   gymtime:()=>[new Set(HIST.map(S=>monthIdx(S.start))).size,2,'month of workouts'],
   split:()=>[HIST.slice(-12).filter(S=>S.ex.some(E=>(E.sets||[]).some(s=>s.tut>0))).length,1,'timed workout'],
   prog:()=>[monthlyBest(ex).length,2,'month of '+ex],
@@ -378,7 +391,7 @@ function medalSVG(tierIdx){const c=tierIdx>=0?TIER[tierIdx][1]:'#2e2e2c';const r
   return `<svg viewBox="0 0 40 40"><path d="M20 3l14.7 8.5v17L20 37 5.3 28.5v-17z" fill="${c}" stroke="${ring}" stroke-width="1.8" stroke-linejoin="round"/>${tierIdx>=0?`<path d="M20 12.5l2.3 4.8 5.2.7-3.8 3.6.9 5.2-4.6-2.5-4.6 2.5.9-5.2-3.8-3.6 5.2-.7z" fill="#121212" opacity=".55"/>`:''}</svg>`}
 const tierOf=a=>a.tiers.reduce((k,t,i)=>a.val>=t?i:k,-1);
 /* ---- one pie, you choose what it shows ---- */
-const PIES=[['plan','Showing up'],['time','Gym time'],['muscle','Muscles'],['ratio','Work : rest']];
+const PIES=[['plan','Showing up'],['time','Gym time'],['muscle','Muscles'],['ratio','Work : rest'],['cardio','Cardio']];
 let pieK=S.get('gym.pie','plan');if(!PIES.some(p=>p[0]===pieK))pieK='plan';
 const pct=(a,b)=>b?Math.round(a/b*100):0;
 function pieData(k){const D28=NOW-28*DAY;
@@ -388,13 +401,16 @@ function pieData(k){const D28=NOW-28*DAY;
     let plan=0,done=0;runs.forEach(r=>{const d=due(r);plan+=d;done+=Math.min(r.n,d)});if(!plan)return null;
     return{parts:[[done,'#199e70','Done'],[plan-done,'#c46a35','Missed']],c:done+'/'+plan,cs:'planned',h:`You kept ${pct(done,plan)}% of your plan over ${runs.length} week${runs.length>1?'s':''}.`,note:'Make-ups count as done.'}}
   const R=HIST.filter(S=>S.start>=D28);
-  if(k==='time'){const T=R.reduce((a,S)=>a+S.total,0);if(!T||!R.length)return null;const U=R.reduce((a,S)=>a+S.tut,0),Rs=R.reduce((a,S)=>a+S.rest,0),W=R.reduce((a,S)=>a+S.warm,0);const O=Math.max(0,T-U-Rs-W);
-    const parts=[[U,'#199e70','Lifting'],[Rs,'#c46a35','Resting'],[O,'#6b6b66','Between exercises']];if(W)parts.push([W,'#7a5fb0','Warm up']);
+  if(k==='time'){const T=R.reduce((a,S)=>a+S.total,0);if(!T||!R.length)return null;const U=R.reduce((a,S)=>a+S.tut,0),Rs=R.reduce((a,S)=>a+S.rest,0),W=R.reduce((a,S)=>a+S.warm,0),C=R.reduce((a,S)=>a+(S.cardio?S.cardio.ms:0),0);const O=Math.max(0,T-U-Rs-W-C);
+    const parts=[[U,'#199e70','Lifting'],[Rs,'#c46a35','Resting'],[O,'#6b6b66','Between exercises']];if(W)parts.push([W,'#7a5fb0','Warm up']);if(C)parts.push([C,CCOL,'Cardio']);
     const big=parts.slice(1).reduce((a,b)=>b[0]>a[0]?b:a);
     return{parts,c:Math.round(T/R.length/60000)+'m',cs:'per session',h:`${pct(big[0],T)}% of your gym time is ${big[2].toLowerCase()}.`,note:'Last 4 weeks.'}}
   if(k==='muscle'){const by={};SETS.filter(r=>r.start>=D28).forEach(r=>{by[r.group]=(by[r.group]||0)+1});const L=Object.entries(by).sort((a,b)=>b[1]-a[1]);const n=L.reduce((a,b)=>a+b[1],0);if(!n)return null;
     const top=L.slice(0,5),rest=L.slice(5).reduce((a,b)=>a+b[1],0);const parts=top.map(([g,v])=>[v,(typeof GC!=='undefined'&&GC[g])||'#8a8980',g]);if(rest)parts.push([rest,'#6b6b66','Other']);
     const lo=top[top.length-1];return{parts,c:n,cs:'sets',h:top.length>1?`${top[0][0]} get${top[0][0].endsWith('s')?'':'s'} ${pct(top[0][1],n)}% of your sets. ${lo[0]} ${lo[0].endsWith('s')?'get':'gets'} ${pct(lo[1],n)}%.`:`All your sets are ${top[0][0]}.`,note:'Last 4 weeks.'}}
+  if(k==='cardio'){const L=R.filter(S=>S.cardio);if(!L.length)return null;const by={};L.forEach(S=>{by[S.cardio.eq]=(by[S.cardio.eq]||0)+S.cardio.ms});
+    const E=Object.entries(by).sort((a,b)=>b[1]-a[1]);const T=E.reduce((a,b)=>a+b[1],0);const parts=E.map(([q,v],i)=>[v,CPAL[i%CPAL.length],q]);
+    return{parts,c:Math.round(T/6e4),cs:'cardio min',h:E.length>1?`${E[0][0]} is ${pct(E[0][1],T)}% of your cardio, across ${L.length} session${L.length>1?'s':''}.`:`All ${Math.round(T/6e4)} minutes on the ${E[0][0].toLowerCase()}, across ${L.length} session${L.length>1?'s':''}.`,note:'Last 4 weeks.'}}
   if(k==='ratio'){const S2=SETS.filter(r=>r.start>=D28&&r.tut>0&&r.rest>0);if(S2.length<3)return null;const w=avg(S2.map(r=>r.tut)),rs=avg(S2.map(r=>r.rest));
     return{parts:[[w,'#199e70','Work'],[rs,'#c46a35','Rest']],c:'1:'+(rs/w).toFixed(1),cs:'work : rest',h:`About ${Math.round(w)} s of work for ${mmss(rs)} of rest each set.`,note:'Last 4 weeks, timed sets only.'}}
   return null}

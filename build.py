@@ -56,7 +56,10 @@ STORAGE_SHIM = ("<script>(function(){const P='preview:',S=Storage.prototype,g=S.
                 "S.removeItem=function(k){return r.call(this,P+k)}})();</script>\n")
 preview = app.replace("let tab='today',", "let tab='stats',", 1)
 i = preview.index('<script>')
-preview = preview[:i] + STORAGE_SHIM + '<script>\n' + read('src', 'seed_year.js') + '\n</script>\n' + preview[i:]
+# ?tour=1 starts the walk through; read it and tidy the address before anything else uses it
+TOUR_FLAG = "<script>if(/[?&]tour=1/.test(location.search)){window.TOUR_FORCE=true;try{history.replaceState(null,'',location.pathname)}catch(e){}}</script>\n"
+preview = preview[:i] + TOUR_FLAG + STORAGE_SHIM + '<script>\n' + read('src', 'seed_year.js') + '\n</script>\n' + preview[i:]
+preview = preview.replace('</body>', '<script>\n' + read('src', 'tour.js') + '\n</script>\n</body>', 1)
 preview = preview.replace('<title>Fitness Application</title>', '<title>Fitness App, 1 Year Preview</title>', 1)
 
 # THEME=bright python3 build.py gives the cream variant; the default is the native off-black

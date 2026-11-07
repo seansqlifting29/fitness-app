@@ -100,43 +100,5 @@ Jump Rope|Cardio|Bodyweight|3|1|0|60|0`;
 const LIB=LIB_RAW.split('\n').map(l=>{const [name,group,equip,sets,reps,w,rest,pop]=l.split('|');return{name,group,equip,sets:+sets,reps:+reps,w:+w,rest:+rest,pop:pop==='1'}});
 const LIBMAP=Object.fromEntries(LIB.map(x=>[x.name.toLowerCase(),x]));
 const GROUPS=['Chest','Back','Shoulders','Arms','Legs','Glutes','Core','Cardio'];
-const EQUIP=['Machine','Cable','Barbell','Dumbbell','Smith','Bodyweight'];
 const groupOf=name=>(LIBMAP[name.toLowerCase()]||{}).group||'Other';
 
-/* the picker: search, filter by muscle or gear, tap to select several, add all at once */
-function libraryPicker(existing,onAdd){
-  const st={q:'',g:'Popular',eq:'',sel:new Set()};
-  const s=document.createElement('div');s.className='scrim';
-  s.innerHTML=`<div class="sheet lib"><div class="grab"></div><div class="libtop"><h3>Add exercises</h3><button class="iconbtn" data-close aria-label="Close" style="width:32px;height:32px">✕</button></div>
-    <input class="field libq" placeholder="Search 100 exercises" id="lq" autocomplete="off">
-    <div class="libchips" id="lg"></div><div class="libchips gear" id="le"></div>
-    <div class="liblist" id="ll"></div>
-    <button class="btn w libgo" id="lgo" disabled>Select exercises</button></div>`;
-  $('#app').appendChild(s);
-  const born=Date.now();s.addEventListener('click',e=>{if(e.target===s&&Date.now()-born<350)return;if(e.target===s||e.target.closest('[data-close]'))s.remove()});
-  const have=new Set(existing.map(n=>n.toLowerCase()));
-  const draw=()=>{
-    s.querySelector('#lg').innerHTML=['Popular','All',...GROUPS].map(g=>`<button class="lchip ${st.g===g?'on':''}" data-g="${g}">${g}</button>`).join('');
-    s.querySelector('#le').innerHTML=['Any gear',...EQUIP].map(e=>`<button class="lchip ${(st.eq||'Any gear')===e?'on':''}" data-eq="${e}">${e}</button>`).join('');
-    const q=st.q.trim().toLowerCase();
-    let items=LIB.filter(x=>(!q||x.name.toLowerCase().includes(q)||x.group.toLowerCase().includes(q)||x.equip.toLowerCase().includes(q))
-      &&(q||st.g==='All'||(st.g==='Popular'?x.pop:x.group===st.g))&&(q||!st.eq||x.equip===st.eq));
-    let html='';
-    if(q&&!LIBMAP[q])html+=`<button class="lrow custom" data-custom="1"><span class="lc">+</span><span class="ln">Add "${esc(st.q.trim())}"<small>Custom exercise</small></span></button>`;
-    let lastG='';
-    items.forEach(x=>{const isHave=have.has(x.name.toLowerCase());const on=st.sel.has(x.name);
-      if(st.g==='All'&&!q&&x.group!==lastG)html+=`<div class="lsec">${x.group}</div>`;
-      lastG=x.group;
-      html+=`<button class="lrow ${on?'on':''} ${isHave?'have':''}" data-n="${esc(x.name)}" ${isHave?'disabled':''}><span class="lc">${on?'✓':''}</span><span class="ln">${esc(x.name)}<small>${x.equip} · ${x.group}</small></span>${isHave?'<span class="lh">Added</span>':''}</button>`});
-    if(!items.length&&!q)html+='<div class="empty" style="padding:20px">Nothing here with that gear.</div>';
-    s.querySelector('#ll').innerHTML=html;
-    const go=s.querySelector('#lgo');const n=st.sel.size;go.disabled=!n;go.textContent=n?`Add ${n} exercise${n>1?'s':''}`:'Select exercises';
-    s.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{st.g=b.dataset.g;st.q='';s.querySelector('#lq').value='';draw()});
-    s.querySelectorAll('[data-eq]').forEach(b=>b.onclick=()=>{st.eq=b.dataset.eq==='Any gear'?'':b.dataset.eq;draw()});
-    s.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const k=b.dataset.n;st.sel.has(k)?st.sel.delete(k):st.sel.add(k);draw()});
-    const c=s.querySelector('[data-custom]');if(c)c.onclick=()=>{const nm=st.q.trim();s.remove();onAdd([E(nm,3,10,20,60)]);render()};
-  };
-  s.querySelector('#lq').oninput=e=>{st.q=e.target.value;draw()};
-  s.querySelector('#lgo').onclick=()=>{const list=[...st.sel].map(n=>{const x=LIBMAP[n.toLowerCase()];return E(x.name,x.sets,x.reps,U()==='lb'?Math.round(x.w*2.2/5)*5:x.w,x.rest)});s.remove();onAdd(list);render()};
-  draw();
-}

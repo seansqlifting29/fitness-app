@@ -1,7 +1,7 @@
 /* ===== 1-year preview data (runs once, before the app loads) ===== */
 window.DEMO_DATA=true;
 (function(){
-  try{if(localStorage.getItem('gym.demoSeeded4'))return}catch(e){return}
+  try{if(localStorage.getItem('gym.demoSeeded5'))return}catch(e){return}
   const W=[ // Mon..Sun, mirrors the starter plan
     {name:'Push',ex:[['Incline Barbell Bench Press',3,10,62.5,90],['Chest Press Machine',3,10,55,75],['Pec Deck',3,12,40,60],['Tricep Pushdown',3,12,30,60]]},
     {name:'Pull',ex:[['Lat Pulldown',3,10,72.5,90],['Seated Cable Row',3,10,57.5,75],['Face Pull',3,15,22.5,60],['Hammer Curl',3,12,16,60]]},
@@ -13,6 +13,8 @@ window.DEMO_DATA=true;
   // a year of training that follows the plan above; every set gets weight, reps,
   // time under tension and the rest taken before it, like the app records
   let seed=20251106;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  let cs=777;const crnd=()=>(cs=(cs*16807)%2147483647)/2147483647;// cardio has its own dice so the lifting data stays the same
+  const EQ=['Incline walk','Rower','Bike','Stair climber','Treadmill'];
   const step=x=>x>=40?2.5:x>=10?1:.5;
   const fat=d=>d<18?.97+.03*d/18:d<=35?1:1-Math.pow((d-35)/60,1.4)*.15;
   const rec=rest=>1-.13*Math.exp(-(rest-30)/58);
@@ -41,12 +43,14 @@ window.DEMO_DATA=true;
         let tut=30*(1/pw-1)*T,r=1;for(let q=0;q<4;q++){r=Math.max(1,Math.round(30*(fat(tut)*carry/pw-1)));tut=r*T}
         tut=Math.round(tut*(.96+rnd()*.08)*1000);t+=tut;TUT+=tut;N++;VOL+=w*r;sets.push({w,r,tut,rest:rest==null?null:rest*1000})}
       ex.push({name,sets})});
+    let cardio=null;if(crnd()<.15+.45*frac){const plan=[10,15,20][Math.floor(crnd()*3)]*6e4;const eq=EQ[Math.min(4,Math.floor(Math.pow(crnd(),1.3)*5))];
+      const ms=Math.round(plan*(crnd()<.12?.55+crnd()*.3:.97+crnd()*.08));t+=Math.round((60+crnd()*120)*1e3)+ms;cardio={eq,ms,plan}}
     const end=t+Math.round(rnd()*3*6e4);
-    hist.push({id:'s'+(id++),date:dk(d),start,split:plan.name,total:end-start,tut:TUT,rest:REST,sets:N,volume:Math.round(VOL),unit:'kg',ex})}
+    hist.push({id:'s'+(id++),date:dk(d),start,split:plan.name,total:end-start,tut:TUT,rest:REST,sets:N,volume:Math.round(VOL),unit:'kg',ex,cardio})}
   const set=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
   set('gym.me',{name:'Sean Tyndale'});set('gym.hist',hist);localStorage.removeItem('gym.blocks');
   // a full week for the preview, in the old day-by-day format the app migrates on load
   let n=1;const ex=(x)=>({id:'p'+(n++),name:x[0],sets:x[1],reps:x[2],w:x[3],rest:x[4]});
   set('gym.plan',W.map(d=>d?{name:d.name,ex:d.ex.map(ex)}:{name:'Rest',ex:[]}));set('gym.weekReset1',true);
-  set('gym.cfg',{unit:'kg',sound:true});localStorage.setItem('gym.demoSeeded4','1');
+  set('gym.cfg',{unit:'kg',sound:true});localStorage.setItem('gym.demoSeeded5','1');
 })();

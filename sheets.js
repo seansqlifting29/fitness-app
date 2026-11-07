@@ -43,7 +43,9 @@ function settingsSheet(){
     <div class="lbl" style="margin-top:18px">Training</div>
     <div class="tgl" style="flex-wrap:wrap"><div>Rest timer<small id="rdesc"></small></div><div class="seg" style="margin:0;width:170px"><button data-rm="ratio" class="${cfg.restMode==='ratio'?'on':''}">Ratio</button><button data-rm="custom" class="${cfg.restMode==='custom'?'on':''}">Custom</button></div></div>
     <div class="tgl" id="rrow" style="${cfg.restMode==='ratio'?'':'display:none'}"><div>Work to rest<small>Rest = set length × this</small></div><div class="ratio"><button data-rr="-1" aria-label="Less rest">−</button><b id="rv">1:${cfg.ratio}</b><button data-rr="1" aria-label="More rest">+</button></div></div>
-    <div class="tgl"><div>Warm up first<small>A warm-up step before your first set</small></div><input type="checkbox" id="swu" ${cfg.warmup?'checked':''}></div>
+    <div class="tgl"><div>Warm up first<small>Before the day's first workout</small></div><input type="checkbox" id="swu" ${cfg.warmup?'checked':''}></div>
+    <div class="tgl"><div>Warm up every exercise<small>Before the first set of each one</small></div><input type="checkbox" id="swe" ${cfg.warmEach?'checked':''}></div>
+    <div class="tgl"><div>Cardio after every workout<small>10, 15 or 20 minutes once the lifts are done</small></div><input type="checkbox" id="scd" ${cfg.cardio?'checked':''}></div>
     <div class="tgl">Beep and vibrate when rest ends<input type="checkbox" id="ss" ${cfg.sound?'checked':''}></div>
     <div class="lbl" style="margin-top:18px">Your data</div>
     <div class="tgl" style="border:0"><div>Backup<small>Save your plan and history to a file, or restore one on a new phone</small></div></div>
@@ -55,6 +57,8 @@ function settingsSheet(){
   s.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{cfg.unit=b.dataset.u;save();s.querySelectorAll('[data-u]').forEach(x=>x.classList.toggle('on',x===b));render();$('#app').appendChild(s)});
   s.querySelector('#ss').onchange=e=>{cfg.sound=e.target.checked;save()};
   s.querySelector('#swu').onchange=e=>{cfg.warmup=e.target.checked;save()};
+  s.querySelector('#swe').onchange=e=>{cfg.warmEach=e.target.checked;save()};
+  s.querySelector('#scd').onchange=e=>{cfg.cardio=e.target.checked;save();render();$('#app').appendChild(s)};
   const rdesc=()=>{s.querySelector('#rdesc').textContent=cfg.restMode==='ratio'?`A 30s set gets ${clock(Math.min(360000,Math.max(30000,30000*cfg.ratio)))} rest. Kept between 0:30 and 6:00.`:'Each exercise uses the rest time set in Plan.';s.querySelector('#rv').textContent='1:'+cfg.ratio;s.querySelector('#rrow').style.display=cfg.restMode==='ratio'?'':'none'};
   rdesc();
   s.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{cfg.restMode=b.dataset.rm;save();s.querySelectorAll('[data-rm]').forEach(x=>x.classList.toggle('on',x===b));rdesc()});
@@ -65,14 +69,6 @@ function settingsSheet(){
   return s;
 }
 
-function addExerciseSheet(onAdd){
-  const s=sheet(`<h3>Add exercise</h3><input class="field" id="an" placeholder="Exercise name" style="margin-top:10px">
-    <div class="edit" style="padding:0;background:none;border:0"><div class="grid"><label>Sets<input id="as" inputmode="numeric" value="3"></label><label>Reps<input id="ar" inputmode="numeric" value="10"></label><label>${U()}<input id="aw" inputmode="decimal" value="20"></label><label>Rest s<input id="at" inputmode="numeric" value="60"></label></div></div>
-    <div class="row" style="margin-top:14px"><button class="btn" data-close>Cancel</button><button class="btn w" data-add>Add</button></div>`);
-  setTimeout(()=>s.querySelector('#an').focus(),60);
-  s.querySelector('[data-add]').onclick=()=>{const n=s.querySelector('#an').value.trim();if(!n)return s.querySelector('#an').focus();
-    onAdd(E(n,Math.max(1,parseInt(s.querySelector('#as').value)||1),Math.max(1,parseInt(s.querySelector('#ar').value)||1),Math.max(0,parseFloat(s.querySelector('#aw').value)||0),Math.max(0,parseInt(s.querySelector('#at').value)||0)));s.remove();render()};
-}
 function sampleData(){
   const names=[0,1,2,4,5];let d=new Date();d.setHours(0,0,0,0);const out=[];
   for(let k=60;k>=1;k--){const day=new Date(d);day.setDate(d.getDate()-k);const w=wd(day);const p=dayW(w);if(!p||!p.ex.length||Math.random()<.2)continue;
