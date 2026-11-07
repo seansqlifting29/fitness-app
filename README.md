@@ -7,13 +7,12 @@
 **My personal workout tracker. Half checklist, half clock, every set timed.**
 
 [![Live app](https://img.shields.io/badge/live-open%20the%20app-199e70?style=flat-square)](https://majestic-jalebi-27b504.netlify.app)
-[![Tour](https://img.shields.io/badge/tour-1%20minute-c98500?style=flat-square)](https://majestic-jalebi-27b504.netlify.app/preview.html?tour=1)
 ![PWA](https://img.shields.io/badge/PWA-works%20offline-3987e5?style=flat-square)
 ![Vanilla JS](https://img.shields.io/badge/vanilla-JS-f0db4f?style=flat-square&logo=javascript&logoColor=black)
 ![Firebase](https://img.shields.io/badge/sync-Firebase-ffca28?style=flat-square&logo=firebase&logoColor=black)
 ![License](https://img.shields.io/badge/license-MIT-8a8980?style=flat-square)
 
-**[Open the app](https://majestic-jalebi-27b504.netlify.app)** &nbsp;·&nbsp; **[Take the tour](https://majestic-jalebi-27b504.netlify.app/preview.html?tour=1)** &nbsp;·&nbsp; **[Send feedback](https://github.com/seansqlifting29/fitness-app/issues/new)**
+**[Open the app](https://majestic-jalebi-27b504.netlify.app)** &nbsp;·&nbsp; **[Send feedback](https://github.com/seansqlifting29/fitness-app/issues/new)**
 
 <br>
 
@@ -61,7 +60,10 @@ Installs to the home screen, works with no signal, and syncs across devices if y
 
 This is built for me and the way I train, so it's opinionated. If you lift and want to give it a go, I'm always looking for feedback. **[Open an issue](https://github.com/seansqlifting29/fitness-app/issues/new)** with what worked, what didn't, or what you'd change.
 
-New to it? The **[one minute tour](https://majestic-jalebi-27b504.netlify.app/preview.html?tour=1)** walks through a sample year of training.
+<p align="center">
+<img src="docs/screenshots/analytics-year.gif" width="320" alt="Analytics on a year of sample training: every pie view and chart"><br>
+<sub>A year of sample training. Every chart is drawn from the logged sets.</sub>
+</p>
 
 ## Under the hood
 
