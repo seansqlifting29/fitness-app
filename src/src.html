@@ -568,6 +568,7 @@ input{font:inherit;color:inherit}
 .tpause{flex:0 0 34%;border-radius:18px;background:rgba(0,0,0,.28);color:#fff;font-size:17px;font-weight:800}
 .tpause[hidden]{display:none}
 .wup{margin:auto 0;padding:0 4px 20px}.wup.nm b{font-size:22px;line-height:1.15;color:var(--t2)}
+.nmrow{display:flex;align-items:center;gap:10px}.nmrow b{flex:1;min-width:0}.swchip{flex:none;display:flex;align-items:center;gap:5px;height:34px;padding:0 13px 0 11px;border-radius:17px;background:var(--card2);color:var(--t2);font-size:14px;font-weight:700}.swchip svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .trend{width:100%;height:auto;display:block;margin:4px 0 6px;overflow:visible}.trend .tl{font-size:12px;font-weight:700;fill:var(--t3);letter-spacing:0;text-transform:none}.trend .tl.g{fill:var(--lift)}.wtg .tsub{font-size:15px;font-weight:600;color:var(--t3);margin-top:-4px}
 .wtg{display:flex;flex-direction:column;gap:10px;margin-top:26px}.wtg div{display:flex;align-items:baseline;gap:12px}.wtg span{min-width:82px;white-space:nowrap;font-size:13px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px}.wtg b{font-size:26px!important;font-weight:800;letter-spacing:-.3px;color:var(--t2)}.wtg .on b{color:var(--t1);font-size:32px!important}.wup b{display:block;font-size:40px;font-weight:900;letter-spacing:-1px}.wup p{color:var(--t2);font-size:16px;line-height:1.5;margin-top:10px;max-width:320px}
 .timer.warm{background:#b8730f}.timer.cardio,.timer.cpick{background:#7a2f6b}.fsay.cardio,.fsay.cpick{color:#e58bd1}
@@ -684,8 +685,11 @@ const swapsAll=()=>{const x=S.get('gym.swaps',{});return x&&typeof x==='object'&
 // a workout's exercises for a date, with that day's swaps applied
 function planEx(wid,date){const d=workouts.find(w=>w.id===wid);if(!d)return[];let ex=d.ex.slice();
   (swapsAll()[date]||[]).forEach(sw=>{const i=ex.findIndex(e=>e.name===sw.a);if(i>=0&&sw.def&&!ex.some(e=>e.name===sw.b))ex[i]=sw.def});return ex}
+// each set starts from the last time you did that same set: if your latest session of this
+// exercise stopped early, set 2 still comes from the last session that had a set 2
+function lastSetFor(name,i){for(let k=hist.length-1;k>=0;k--){const x=(hist[k].ex||[]).find(e=>e.name===name);if(x&&x.sets&&x.sets[i])return x.sets[i]}return null}
 function exOf(e){const prev=lastFor(e.name);return{name:e.name,rest:e.rest,prev:prev?prev.sets.map(s=>num(s.w)+' × '+s.r).join(', '):'',
-  sets:Array.from({length:Math.max(1,e.sets||3)},(_,i)=>{const p=prev&&prev.sets[i];return{w:p?p.w:(e.w||0),r:p?p.r:(e.reps||10),done:false,tut:0}})}}
+  sets:Array.from({length:Math.max(1,e.sets||3)},(_,i)=>{const p=lastSetFor(e.name,i)||(prev&&prev.sets.length?prev.sets[prev.sets.length-1]:null);return{w:p?p.w:(e.w||0),r:p?p.r:(e.reps||10),done:false,tut:0}})}}
 function buildSession(wid,manual){
   const d=workouts.find(w=>w.id===wid)||{name:'Rest',ex:[]};
   return {date:dkey(new Date()),wid:wid||null,manual:!!manual,day:wd(new Date()),split:d.name,startedAt:null,state:'idle',stateAt:Date.now(),tut:0,rest:0,restTarget:0,active:null,
@@ -752,14 +756,22 @@ function heavyExtra(name,w){if(!(w>0))return 0;let top=0;hist.forEach(h=>(h.ex||
   const big=['Barbell','Smith'].includes(equipOf(name))||/leg press|hack/i.test(name);
   return big?(rel>=.9?8000:rel>=.75?5000:rel>=.6?2000:0):(rel>=.9?3000:rel>=.75?2000:0)}
 const SETUP_MIN=8000;
+// Getting into position between sets (set 2 on). Mostly a calculation: one step from your phone
+// to the seat or bar after the chime, plus the equipment, belt or straps, and heavy loads. Your
+// own Start now taps count for 30% once there are 3 that aren't outliers (under half or over
+// two and a half times the calculation, like quick test taps). +10 s taps add 5 s each.
+const POS_LEARN=0.3;
+function posFit(name){const base=baseSetup(name,true)+setupAddMs(name);const T=setupSamples(name,1).filter(t=>t>=base*0.5&&t<=base*2.5).slice(-5);
+  return{base,T,med:T.length>=3?T.slice().sort((a,b)=>a-b)[Math.floor(T.length/2)]:null}}
 function setupMs(name,setIdx,w){const T=setupSamples(name,setIdx);let ms;
-  if(T.length>=3){const r=T.slice(-5).slice().sort((a,b)=>a-b);ms=r[Math.floor(r.length/2)]+1000}
+  if(setIdx>0){const f=posFit(name);ms=f.med===null?f.base:(1-POS_LEARN)*f.base+POS_LEARN*f.med;ms+=S.get('gym.setupAdj',{})[name]||0}
+  else if(T.length>=3){const r=T.slice(-5).slice().sort((a,b)=>a-b);ms=r[Math.floor(r.length/2)]+1000}
   else ms=baseSetup(name,setIdx>0)+(setIdx>0?0:(S.get('gym.setupAdj',{})[name]||0))+setupAddMs(name);
   ms+=heavyExtra(name,w);
   return Math.round(Math.min(90000,Math.max(SETUP_MIN,ms))/1000)*1000}
 // what get set actually took this time: early Start, the full countdown, or the countdown plus added time
-function recordSetup(name,setIdx,ms){const A=S.get('gym.setupT',{});const k=setupKey(name,setIdx);A[k]=(Array.isArray(A[k])?A[k]:[]).concat(Math.round(ms)).slice(-5);S.set('gym.setupT',A)}
-const learnedSetup=(name,setIdx)=>setupSamples(name,setIdx).length>=3;
+function recordSetup(name,setIdx,ms){const A=S.get('gym.setupT',{});const k=setupKey(name,setIdx);A[k]=(Array.isArray(A[k])?A[k]:[]).concat(Math.round(ms)).slice(-8);S.set('gym.setupT',A)}
+const learnedSetup=(name,setIdx)=>setIdx>0?posFit(name).med!==null:setupSamples(name,setIdx).length>=3;
 // things that make setup longer, switched on per exercise from the bubbles during rest
 const SETUP_ADDS=[['straps','Straps',12000],['belt','Belt',10000],['seat','Adjust seat',8000],['plates','Change plates',12000]];
 function addsFor(name){const n=name.toLowerCase(),eq=((LIBMAP||{})[n]||{}).equip||'';
@@ -785,8 +797,18 @@ function toggleAdd(name,k){const A=S.get('gym.setupAdd',{});const o=A[name]=A[na
 function moreSetup(){if(ses.state!=='setup')return;const e=ses.ex[ses.active];ses.setupMs=(ses.setupMs||SETUP_MS)+10000;
   if(e){const A=S.get('gym.setupAdj',{});A[e.name]=Math.min(60000,(A[e.name]||0)+5000);S.set('gym.setupAdj',A);
     const C=S.get('gym.setupTaps',{});C[e.name]=(C[e.name]||0)+1;S.set('gym.setupTaps',C)}save();tick()}
+// Between sets rest runs straight into getting in position. The position time is the same get set
+// estimate as always for that exercise and set (learned from your sets, heavier loads, belt or straps):
+// when that much rest is left a chime plays, the screen turns blue, and the set starts by itself when
+// rest is up. Ending rest early still gives you that full get set time.
+function posMs(i){const e=ses.ex[i];const j=curIdx(e);return setupMs(e.name,Math.max(0,j),(e.sets[j]||{}).w)}
+function posChime(){[[660,0],[880,140],[1100,280]].forEach(([f,d])=>setTimeout(()=>tone(f,.16),d));try{navigator.vibrate&&navigator.vibrate([80,60,80])}catch(e){}}
+function toPosition(ms){const i=ses.active;const e=ses.ex[i];if(!e)return;
+  closeState();ses.state='setup';ses.stateAt=Date.now();ses.setupMs=ms;ses.posFromRest=true;ses.posShort=ms<posMs(i)-500;ses.cdBeep=null;ses.beeped=false;posChime();save();render()}
 function startSet(i){
   unlock();
+  if(ses.state==='rest'&&ses.active===i&&!ses.pausedAt&&curIdx(ses.ex[i])>0)return toPosition(posMs(i));
+  ses.posFromRest=false;ses.posShort=false;
   const firstOfDay=!ses.startedAt&&cfg.warmup&&!ses.warmDone&&!hist.some(h=>h.date===ses.date);
   const each=cfg.warmEach&&ses.ex[i]&&doneCount(ses.ex[i])===0&&!(ses.warmed||[]).includes(i);
   if(firstOfDay||each){if(!ses.startedAt)ses.startedAt=Date.now();closeState();ses.active=i;ses.state='warm';ses.stateAt=Date.now();save();render();return}
@@ -797,7 +819,8 @@ function startSet(i){
 // open an exercise; right after finishing one, the transition timer carries over to it
 function moveTo(k){focus=k;nextPick=null;if(ses.state==='next'&&ses.ex[k]&&!exDone(ses.ex[k])){ses.active=k;save()}render()}
 function endWarm(){if(ses.state!=='warm')return;ses.warm=(ses.warm||0)+nowT()-ses.stateAt;ses.warmDone=true;const i=ses.active;(ses.warmed=ses.warmed||[]).push(i);ses.state='idle';startSet(i)}
-function goNow(){if(ses.state!=='setup')return;tone(1180,.45);const e=ses.ex[ses.active];if(e)recordSetup(e.name,curIdx(e),Date.now()-ses.stateAt);ses.state='lift';ses.stateAt=Date.now();save();render()}
+function liftGap(e){const j=e?curIdx(e):-1;if(ses.posFromRest&&j>0&&e.lastEnd&&e.sets[j]){const gap=Date.now()-e.lastEnd;e.sets[j].rest=gap<20*60000?gap:null}}
+function goNow(){if(ses.state!=='setup')return;tone(1180,.45);const e=ses.ex[ses.active];if(e)recordSetup(e.name,curIdx(e),Date.now()-ses.stateAt);liftGap(e);ses.state='lift';ses.stateAt=Date.now();save();render()}
 function finishSet(i){
   const e=ses.ex[i];const j=curIdx(e);if(j<0)return;
   readInputs(i);
@@ -906,11 +929,32 @@ function finishWorkout(){if(ses&&ses.pausedAt)resumeWorkout();
 }
 
 /* ===== audio ===== */
-let ac=null;
-function unlock(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}}
+// Sound has to survive a phone that sleeps between sets. iOS suspends (or "interrupts") the audio
+// when the screen locks or the app is in the background, and only a tap can start it again. So:
+// every tap wakes it (and replaces it if it won't wake), a silent tone keeps it running during a
+// workout, and a beep asked for while it's asleep plays as soon as it wakes instead of vanishing.
+let ac=null,acKeep=null;
+function newAC(){try{if(ac&&ac.close)ac.close()}catch(e){}acKeep=null;ac=new (window.AudioContext||window.webkitAudioContext)()}
+function unlock(){try{if(!ac)newAC();if(ac.state!=='running')ac.resume().catch(()=>{});keepAlive()}catch(e){}}
+function keepAlive(){try{const on=typeof ses!=='undefined'&&ses&&ses.startedAt&&!ses.finished;if(!on&&acKeep){acKeep.stop();acKeep=null}if(!on||!ac||acKeep||ac.state!=='running')return;const o=ac.createOscillator(),g=ac.createGain();g.gain.value=0.00001;o.frequency.value=40;o.connect(g);g.connect(ac.destination);o.start();acKeep=o}catch(e){}}
+function wakeAudio(){try{if(!ac||ac.state==='closed')newAC();
+    // a tap: resume, and if the phone left it stuck, start over with a fresh one
+    const p=ac.resume();const b=ac.createBuffer(1,1,22050),s=ac.createBufferSource();s.buffer=b;s.connect(ac.destination);s.start(0);
+    Promise.resolve(p).then(()=>{if(ac.state!=='running'){newAC();ac.resume().catch(()=>{})}keepAlive()}).catch(()=>{})}catch(e){}}
+// keep the screen on while a workout is running, so the phone doesn't sleep through rest and miss the beeps
+let wlock=null,wlBusy=false;
+function screenOn(){try{const on=typeof ses!=='undefined'&&ses&&ses.startedAt&&!ses.finished&&!ses.pausedAt&&!document.hidden;
+  if(on&&!wlock&&!wlBusy&&navigator.wakeLock){wlBusy=true;navigator.wakeLock.request('screen').then(l=>{wlock=l;l.addEventListener('release',()=>{wlock=null})}).catch(()=>{}).finally(()=>{wlBusy=false})}
+  else if(!on&&wlock){wlock.release().catch(()=>{});wlock=null}}catch(e){}}
+['pointerdown','touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{wakeAudio();screenOn()},{capture:true,passive:true}));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ac)ac.resume().catch(()=>{});screenOn()});
+// play now if the audio is awake, otherwise as soon as it wakes (a beep due now is still worth hearing)
+function whenAudio(fn){try{if(!ac)newAC();if(ac.state==='running'){keepAlive();return fn()}const t0=Date.now(),p=ac.resume();Promise.resolve(p).then(()=>{if(ac.state==='running'&&Date.now()-t0<1500)fn()}).catch(()=>{})}catch(e){}}
 // get set: a short tone each of the last five seconds, rising, and a longer one when lifting starts
-function tone(f,len){if(!cfg.sound)return;try{unlock();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.connect(g);g.connect(ac.destination);const t=ac.currentTime;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.28,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+len);o.start(t);o.stop(t+len+.02)}catch(e){}}
-function beep(){if(!cfg.sound)return;try{unlock();[0,.25].forEach((d,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=i?1320:880;o.connect(g);g.connect(ac.destination);const t=ac.currentTime+d;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.3,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.2);o.start(t);o.stop(t+.22)})}catch(e){}try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
+function tone(f,len){if(!cfg.sound)return;whenAudio(()=>tone0(f,len))}
+function tone0(f,len){try{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.connect(g);g.connect(ac.destination);const t=ac.currentTime;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.28,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+len);o.start(t);o.stop(t+len+.02)}catch(e){}}
+function beep(){if(!cfg.sound)return;whenAudio(beep0);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
+function beep0(){try{[0,.25].forEach((d,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=i?1320:880;o.connect(g);g.connect(ac.destination);const t=ac.currentTime+d;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.3,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.2);o.start(t);o.stop(t+.22)})}catch(e){}}
 
 /* ===== welcome: start fresh, create an account, or sign in on a new device ===== */
 let wMode='start',wMsg='',wBusy=false,wOff=null;const wv={};// what you've typed, kept across redraws
@@ -1076,7 +1120,10 @@ function focusHTML(){
     const pv=j>0?e.sets[j-1]:null;
     const lines=pv?`<div class="on"><span>Previous set</span><b>${kg(pv.w)} × ${pv.r}</b></div>`
       :`${trendHTML(e.name,j,q)}<div class="on"><b>${kg(q.w)} × ${q.r}</b></div><div class="tsub">${vsLast(last,q)}</div>`;
-    return focusShell(i,e,j,`<div class="wup nm"><b>${esc(e.name)}</b><p>${setTxt}</p><div class="wtg">${lines}</div></div>`)}
+    // before the first set you can still swap: a taken machine is easiest to spot as you walk up to it
+    const canSwap=!doneCount(e)&&!ses.finished&&st!=='lift'&&st!=='setup'&&st!=='warm';
+    const name=canSwap?`<div class="nmrow"><b>${esc(e.name)}</b><button class="swchip" data-xsub="${i}" aria-label="Swap ${esc(e.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>Swap</button></div>`:`<b>${esc(e.name)}</b>`;
+    return focusShell(i,e,j,`<div class="wup nm">${name}<p>${setTxt}</p><div class="wtg">${lines}</div></div>`)}
   const enter=focus!==render.lastFocus;render.lastFocus=focus;if(enter)focusUI={more:false,nextOpen:false};
   const shortT=j<0&&ses.ex.some((x,k)=>k!==i&&!exDone(x));
   return `<div class="focus ${enter?'enter':''} ${shortT?'shortT':''}"><div class="ftop">
@@ -1106,13 +1153,15 @@ function phase(){
 function tick(){try{tickInner()}catch(e){console.error(e)}}
 function tickInner(){
   if(!ses)return;
+  if((tick.n=(tick.n||0)+1)%8===0)screenOn();
   if(!document.querySelector('.scrim')&&focus===null&&!document.querySelector('.dghost')){
     const newDay=ses.date!==dkey(new Date());const open=ses.startedAt&&!ses.finished;const idle=Date.now()-ses.stateAt;
     const stale=open?(idle>IDLE_LIMIT||(newDay&&idle>3600000)):newDay;
     if(stale&&!tick.rolling){tick.rolling=true;try{render()}finally{tick.rolling=false}return}}
   if(ses.state==='setup'&&!ses.pausedAt){const left=(ses.setupMs||SETUP_MS)-(Date.now()-ses.stateAt);const sec=Math.ceil(left/1000);
     if(sec>=1&&sec<=5&&ses.cdBeep!==sec){ses.cdBeep=sec;tone(520+(5-sec)*110,.12)}}
-  if(ses.state==='setup'&&!ses.pausedAt&&Date.now()-ses.stateAt>=(ses.setupMs||SETUP_MS)){tone(1180,.45);const se=ses.ex[ses.active];if(se)recordSetup(se.name,curIdx(se),ses.setupMs||SETUP_MS);ses.state='lift';ses.stateAt+=(ses.setupMs||SETUP_MS);save();if(tab==='today')render();return}
+  if(ses.state==='rest'&&!ses.pausedAt&&ses.active!==null&&ses.ex[ses.active]&&curIdx(ses.ex[ses.active])>0){const left=ses.restTarget-(Date.now()-ses.stateAt);if(left<=posMs(ses.active)){toPosition(Math.max(5000,left));return}}
+  if(ses.state==='setup'&&!ses.pausedAt&&Date.now()-ses.stateAt>=(ses.setupMs||SETUP_MS)){tone(1180,.45);const se=ses.ex[ses.active];if(se&&!ses.posFromRest)recordSetup(se.name,curIdx(se),ses.setupMs||SETUP_MS);liftGap(se);ses.state='lift';ses.stateAt+=(ses.setupMs||SETUP_MS);save();if(tab==='today')render();return}
   if(tab!=='today')return;
   if(ses.active!==null&&!ses.ex[ses.active]){ses.active=null;ses.state='idle'}
   const p=phase();
