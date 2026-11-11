@@ -78,7 +78,7 @@ async def main():
           [40000,41000,42000,43000].forEach(m=>recordSetup('Barbell Bench Press',0,m));const b=setupMs('Barbell Bench Press',0,0);
           const n=JSON.parse(localStorage.getItem('gym.setupT'))['Barbell Bench Press|0'].length;localStorage.removeItem('gym.setupT');return[a,b,n]})()""")
         ok(med[0] == 21000, f'after 3 timed sets get set is your median + 1 s ({med[0]})')
-        ok(med[1] == 42000 and med[2] == 5, f'only the last 5 count ({med[1]}, kept {med[2]})')
+        ok(med[1] == 42000 and med[2] <= 8, f'only the last 5 count ({med[1]}, stored {med[2]})')
         ok(await ev("recordSetup('Rare Lift',0,500000);const v=setupMs('Rare Lift',0,0)<=90000;localStorage.removeItem('gym.setupT');v"), 'setupMs is capped at 90 s')
         adds = await ev("[addsFor('Barbell Bench Press').map(a=>a[0]),addsFor('Deadlift').map(a=>a[0]),addsFor('Dumbbell Curl').map(a=>a[0])]")
         ok('belt' not in adds[0], 'no belt bubble on bench')
@@ -98,6 +98,23 @@ async def main():
         ok(tr['dots'] == 7, 'six session dots plus the target ring')
         vs = await ev("[vsLast(null,{w:60,r:8}),vsLast({w:117.5,r:12},{w:117.5,r:12}),vsLast({w:117.5,r:12},{w:117.5,r:13}),vsLast({w:117.5,r:12},{w:122.5,r:10}),vsLast({w:100,r:8},{w:97.5,r:8})]")
         ok(vs == ['First time', 'Same as last time', '1 more rep than last time', '+5 kg on last time, 2 fewer reps', '−2.5 kg on last time'], f'target vs last time in words ({vs})')
+
+
+        # ---- getting into position between sets: mostly the calculation ----
+        pos = await ev("""(()=>{['gym.setupT','gym.setupAdj','gym.setupAdd'].forEach(k=>localStorage.removeItem(k));const n='Barbell Back Squat';
+          const base=posFit(n).base,r={base,plain:setupMs(n,1,0)};
+          [2000,1500,2500,2000,1800].forEach(t=>recordSetup(n,1,t));r.quick=setupMs(n,1,0);
+          localStorage.removeItem('gym.setupT');[20000,21000,19000].forEach(t=>recordSetup(n,1,t));r.slow=setupMs(n,1,0);
+          recordSetup(n,1,300000);r.outlier=setupMs(n,1,0);
+          localStorage.removeItem('gym.setupT');[9000,9500,10000].forEach(t=>recordSetup(n,1,t));r.fast=setupMs(n,1,0);
+          localStorage.removeItem('gym.setupT');const A={};A[n]=10000;localStorage.setItem('gym.setupAdj',JSON.stringify(A));r.adj=setupMs(n,1,0);
+          ['gym.setupT','gym.setupAdj'].forEach(k=>localStorage.removeItem(k));return r})()""")
+        ok(pos['plain'] == round(pos['base']/1000)*1000, f"with no history it's the calculation ({pos['plain']//1000} s)")
+        ok(pos['quick'] == pos['plain'], 'quick test taps far under the calculation are ignored as outliers')
+        ok(pos['slow'] == round((0.7*pos['base'] + 0.3*20000)/1000)*1000, f"3 real timings count for 30%, the calculation for 70% ({pos['slow']//1000} s)")
+        ok(pos['outlier'] == pos['slow'], 'a huge timing (phone left on a bench) is ignored')
+        ok(pos['plain'] > pos['fast'] >= 8000, f"repeatedly starting early pulls it down a little ({pos['fast']//1000} s)")
+        ok(pos['adj'] == pos['plain'] + 10000, '+10 s taps (5 s each) add to the position time')
 
         # ---- settings ----
         ok(await ev('cfg.cardio') is True, 'cardio after workouts is on by default')

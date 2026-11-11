@@ -18,6 +18,7 @@ async def main():
         b = await p.chromium.launch(**launch_args()); errs = []
         ctx = await b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block')
         pg = await ctx.new_page(); pg.on('pageerror', lambda e: errs.append(str(e)))
+        import datetime; await pg.clock.set_system_time(datetime.datetime(2026, 11, 7, 10))  # fixed Saturday so the result doesn't depend on today
         await pg.goto(BASE); await pg.wait_for_timeout(400)
         pristine = sorted(await pg.evaluate("Object.keys(localStorage).filter(k=>/^(gym3?\\.|fit\\.)/.test(k))"))
         await pg.fill('#nm', 'Sean'); await pg.click('#go'); await pg.wait_for_timeout(300)

@@ -51,6 +51,7 @@ with sync_playwright() as p:
     # the preview must not touch real data on the same origin
     page.goto(URL + 'preview.html')
     page.wait_for_timeout(1200)
+    page.evaluate("document.querySelectorAll('[data-tskip]').forEach(b=>b.click())")  # close the tour card so it can't sit over a chart point
     check(page.locator('.an-sample').count() == 1, 'preview opens on Analytics with sample data')
     page.click('[data-atab=advanced]')
     page.locator('[data-card=len] [data-drill]').first.click(force=True)

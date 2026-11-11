@@ -14,6 +14,7 @@ async def main():
   async with async_playwright() as p:
     b=await p.chromium.launch(**launch_args());errs=[]
     ctx=await b.new_context(viewport={'width':390,'height':844},service_workers='block');pg=await ctx.new_page();pg.on('pageerror',lambda e:errs.append(str(e)))
+    import datetime;await pg.clock.set_system_time(datetime.datetime(2026,11,7,10))  # a Saturday: these cases need days already gone this week
     await pg.goto(BASE);await pg.wait_for_timeout(500);await pg.fill('#nm','Sam');await pg.click('#go');await pg.wait_for_timeout(300)
     t=await pg.evaluate('wd(new Date())')
     # today: Upper, ended early after one exercise

@@ -90,6 +90,19 @@ async def main():
         await ev("FA.resumeWorks=true"); await pg.mouse.click(200, 400); await pg.wait_for_timeout(300)
         ok(610 not in await tones() and 620 not in await tones(), 'beeps that were due more than a moment ago are dropped, not played in a burst')
 
+        # a notification can mute the audio while it still says "running": taps refresh an old connection
+        made = await ev("FA.made")
+        await pg.mouse.click(200, 400); await pg.wait_for_timeout(200)
+        ok(await ev("FA.made") == made, 'quick taps reuse a fresh audio connection')
+        await ev("acBorn=Date.now()-AC_FRESH-1000"); await pg.mouse.click(200, 400); await pg.wait_for_timeout(300)
+        ok(await ev("FA.made") > made and await ev("ac.state") == 'running', 'a tap on an older connection swaps in a new one, clearing any silent mute')
+        await ev("FA.starts=[];tone(950,.1)"); await pg.wait_for_timeout(100)
+        ok(950 in await tones(), 'and beeps play on the new one')
+
+        # iOS reports an interruption mid-rest: the app asks it to resume without waiting for a tap
+        await ev("FA.resumeWorks=true;ac.state='interrupted';ac.onstatechange()"); await pg.wait_for_timeout(600)
+        ok(await ev("ac.state") == 'running', 'an interruption during a workout is resumed on its own')
+
         # finishing releases the screen and stops the keep-alive
         stops = await ev("FA.stops"); rel = await ev("FA.released")
         await ev("ses.finished=true;save();keepAlive();screenOn()"); await pg.wait_for_timeout(200)
