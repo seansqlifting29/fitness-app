@@ -925,7 +925,7 @@ function finishWorkout(){if(ses&&ses.pausedAt)resumeWorkout();
   }
   if(summary){ses.finished=true;ses.endedAt=Date.now();ses.state='idle';ses.active=null}else{ses=null;ensureSession()}
   focus=null;save();render();
-  if(summary)sheet(`<h3>Workout saved</h3><p>${clock(summary.total)} in the gym · ${summary.sets} set${summary.sets===1?"":"s"} · ${clock(summary.tut)} under tension · ${clock(summary.rest)} resting</p><button class="btn w" style="width:100%" data-close>Done</button>`);
+  if(summary){if(window.workoutSheet)workoutSheet(summary,'Workout saved');else sheet(`<h3>Workout saved</h3><p>${clock(summary.total)} in the gym · ${summary.sets} set${summary.sets===1?"":"s"} · ${clock(summary.tut)} under tension · ${clock(summary.rest)} resting</p><button class="btn w" style="width:100%" data-close>Done</button>`)}
 }
 
 /* ===== audio ===== */
@@ -1064,7 +1064,7 @@ function homeHTML(){
     return `<div class="item ${d?'done':''} ${c&&!d?'going':''}"><button class="circ" data-tog="${i}" aria-label="Check off ${esc(e.name)}">${IC.check}</button>
       <button class="t" data-open="${i}" style="text-align:left">${esc(e.name)}</button>${c&&!d?`<span class="p">${c} of ${e.sets.length}</span>`:''}${!c&&ses.startedAt&&!ses.finished?`<button class="xdots" data-xsub="${i}" aria-label="Swap ${esc(e.name)}"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>`:''}<button data-open="${i}" aria-label="Open">${IC.chev}</button></div>`}).join('');
   const gym=ses.startedAt?clock((ses.endedAt||Date.now())-ses.startedAt):'';
-  if(ses.finished)return head+`<div class="home"><div class="livepill saved"><span class="dot"></span><span>Workout saved</span><b>${gym}</b></div>
+  if(ses.finished)return head+`<div class="home"><div class="livepill saved" data-saved role="button"><span class="dot"></span><span>Workout saved</span><b>${gym}</b></div>
     <div class="items">${items}</div><div class="spacer"></div>${(()=>{const tw=ses.then&&workouts.find(w=>w.id===ses.then)&&{name:thenName()};return tw?`<button class="finish ready" data-startthen>Start ${esc(tw.name)}</button>`:''})()}${nextStep()}</div>`;
   const thenW=ses.then&&workouts.find(w=>w.id===ses.then)&&{name:thenName()};
   return head+`<div class="home">${ses.startedAt?`<button class="livepill" id="pill" data-resume><span class="dot"></span><span id="pillT">Workout</span><b id="pillC">0:00</b></button>`:''}
@@ -1243,6 +1243,7 @@ function bind(){
   on('[data-ceq]',b=>{ses.cardioEq=b.dataset.ceq;save();render()});
   on('[data-cmin]',b=>{ses.cardioMin=+b.dataset.cmin;save();render()});
   on('[data-xsub]',b=>subSheet(+b.dataset.xsub));
+  on('[data-saved]',()=>{const k=ses&&ses.date;const r=hist.filter(x=>x&&x.date===k&&Array.isArray(x.ex)&&x.ex.length).sort((a,b)=>(b.start||0)-(a.start||0))[0];if(r&&window.workoutSheet)workoutSheet(r,'Workout saved')});
   on('[data-tk2]',()=>endWarm());
   on('[data-tm]',()=>moreSetup());
   on('[data-snote]',b=>setupNote(b.dataset.snote));
