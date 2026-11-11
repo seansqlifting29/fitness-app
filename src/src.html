@@ -804,7 +804,7 @@ function moreSetup(){if(ses.state!=='setup')return;const e=ses.ex[ses.active];se
 function posMs(i){const e=ses.ex[i];const j=curIdx(e);return setupMs(e.name,Math.max(0,j),(e.sets[j]||{}).w)}
 function posChime(){[[660,0],[880,140],[1100,280]].forEach(([f,d])=>setTimeout(()=>tone(f,.16),d));try{navigator.vibrate&&navigator.vibrate([80,60,80])}catch(e){}}
 function toPosition(ms){const i=ses.active;const e=ses.ex[i];if(!e)return;
-  closeState();ses.state='setup';ses.stateAt=Date.now();ses.setupMs=ms;ses.posFromRest=true;ses.posShort=ms<posMs(i)-500;ses.cdBeep=null;ses.beeped=false;posChime();save();render()}
+  if(Date.now()-acBorn>AC_FRESH)freshAC();closeState();ses.state='setup';ses.stateAt=Date.now();ses.setupMs=ms;ses.posFromRest=true;ses.posShort=ms<posMs(i)-500;ses.cdBeep=null;ses.beeped=false;posChime();save();render()}
 function startSet(i){
   unlock();
   if(ses.state==='rest'&&ses.active===i&&!ses.pausedAt&&curIdx(ses.ex[i])>0)return toPosition(posMs(i));
@@ -934,26 +934,37 @@ function finishWorkout(){if(ses&&ses.pausedAt)resumeWorkout();
 // every tap wakes it (and replaces it if it won't wake), a silent tone keeps it running during a
 // workout, and a beep asked for while it's asleep plays as soon as it wakes instead of vanishing.
 // iOS can also mute the page's audio when a notification sound plays, while still reporting it as
-// running. Nothing in code can see that, so taps swap in a fresh audio connection once the current one
-// is more than a few seconds old: whatever a notification did, the next tap (Done, Start set) clears it.
-let ac=null,acKeep=null,acBorn=0;const AC_FRESH=8000;
-function newAC(){try{if(ac&&ac.close)ac.close()}catch(e){}acKeep=null;ac=new (window.AudioContext||window.webkitAudioContext)();acBorn=Date.now();
-  const me=ac;try{me.onstatechange=()=>{if(me!==ac||me.state==='running'||me.state==='closed')return;const on=typeof ses!=='undefined'&&ses&&ses.startedAt&&!ses.finished;if(on)setTimeout(()=>{if(me===ac&&me.state!=='running')me.resume().catch(()=>{})},300)}}catch(e){}}
+// running. Nothing in code can see that, so a real tap swaps in a fresh audio connection once the current
+// one is more than a few seconds old. The old one is only closed after the new one is confirmed playing:
+// a scroll isn't a tap to iOS, and closing first is how a scroll during rest used to leave the sound dead.
+let ac=null,acKeep=null,acBorn=0,acPending=false;const AC_FRESH=2000;
+const AC=()=>new (window.AudioContext||window.webkitAudioContext)();
+function adoptAC(f){const old=ac;ac=f;acBorn=Date.now();acKeep=null;
+  try{f.onstatechange=()=>{if(f!==ac||f.state==='running'||f.state==='closed')return;const on=typeof ses!=='undefined'&&ses&&ses.startedAt&&!ses.finished;if(on)setTimeout(()=>{if(f===ac&&f.state!=='running')f.resume().catch(()=>{})},300)}}catch(e){}
+  if(old&&old!==f)setTimeout(()=>{try{old.close()}catch(e){}},1500)}   // let a beep already playing on the old one finish
+function newAC(){adoptAC(AC())}
+function silent(c){try{const b=c.createBuffer(1,1,22050),s=c.createBufferSource();s.buffer=b;s.connect(c.destination);s.start(0)}catch(e){}}
+function freshAC(){if(acPending)return;try{acPending=true;const f=AC();const p=f.resume();silent(f);
+  Promise.resolve(p).then(()=>{acPending=false;if(f.state==='running'){adoptAC(f);keepAlive()}else f.close().catch(()=>{})}).catch(()=>{acPending=false;try{f.close()}catch(e){}})}catch(e){acPending=false}}
 function unlock(){try{if(!ac)newAC();if(ac.state!=='running')ac.resume().catch(()=>{});keepAlive()}catch(e){}}
 function keepAlive(){try{const on=typeof ses!=='undefined'&&ses&&ses.startedAt&&!ses.finished;if(!on&&acKeep){acKeep.stop();acKeep=null}if(!on||!ac||acKeep||ac.state!=='running')return;const o=ac.createOscillator(),g=ac.createGain();g.gain.value=0.00001;o.frequency.value=40;o.connect(g);g.connect(ac.destination);o.start();acKeep=o}catch(e){}}
-function wakeAudio(){try{if(!ac||ac.state==='closed'||Date.now()-acBorn>AC_FRESH)newAC();
-    // a tap: resume, and if the phone left it stuck, start over with a fresh one
-    const p=ac.resume();const b=ac.createBuffer(1,1,22050),s=ac.createBufferSource();s.buffer=b;s.connect(ac.destination);s.start(0);
-    Promise.resolve(p).then(()=>{if(ac.state!=='running'){newAC();ac.resume().catch(()=>{})}keepAlive()}).catch(()=>{})}catch(e){}}
+// a touch wakes the sound. A real tap (touchend, click, key) also swaps in a fresh connection when the
+// current one is old or stuck, keeping the working one until the fresh one is confirmed playing
+function wakeAudio(real){try{if(!ac||ac.state==='closed')newAC();
+    const c=ac;if(c.state!=='running')c.resume().catch(()=>{});
+    if(real){silent(c);if(c.state!=='running'||Date.now()-acBorn>AC_FRESH)freshAC()}   // during the tap itself, while iOS still counts it as one
+    if(c.state==='running')keepAlive()}catch(e){}}
 // keep the screen on while a workout is running, so the phone doesn't sleep through rest and miss the beeps
 let wlock=null,wlBusy=false;
 function screenOn(){try{const on=typeof ses!=='undefined'&&ses&&ses.startedAt&&!ses.finished&&!ses.pausedAt&&!document.hidden;
   if(on&&!wlock&&!wlBusy&&navigator.wakeLock){wlBusy=true;navigator.wakeLock.request('screen').then(l=>{wlock=l;l.addEventListener('release',()=>{wlock=null})}).catch(()=>{}).finally(()=>{wlBusy=false})}
   else if(!on&&wlock){wlock.release().catch(()=>{});wlock=null}}catch(e){}}
-['pointerdown','touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{wakeAudio();screenOn()},{capture:true,passive:true}));
+['pointerdown','touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{wakeAudio(t!=='pointerdown');screenOn()},{capture:true,passive:true}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ac)ac.resume().catch(()=>{});screenOn()});
 // play now if the audio is awake, otherwise as soon as it wakes (a beep due now is still worth hearing)
-function whenAudio(fn){try{if(!ac)newAC();if(ac.state==='running'){keepAlive();return fn()}const t0=Date.now(),p=ac.resume();Promise.resolve(p).then(()=>{if(ac.state==='running'&&Date.now()-t0<1500)fn()}).catch(()=>{})}catch(e){}}
+// a beep asked for during a short interruption (a notification) keeps trying for 1.5 seconds
+function whenAudio(fn){try{if(!ac)newAC();if(ac.state==='running'){keepAlive();return fn()}const t0=Date.now();
+  const go=()=>{if(!ac||Date.now()-t0>1500)return;if(ac.state==='running'){keepAlive();return fn()}Promise.resolve(ac.resume()).catch(()=>{}).then(()=>{if(ac&&ac.state==='running'&&Date.now()-t0<=1500)fn();else setTimeout(go,300)})};go()}catch(e){}}
 // get set: a short tone each of the last five seconds, rising, and a longer one when lifting starts
 function tone(f,len){if(!cfg.sound)return;whenAudio(()=>tone0(f,len))}
 function tone0(f,len){try{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.connect(g);g.connect(ac.destination);const t=ac.currentTime;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.28,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+len);o.start(t);o.stop(t+len+.02)}catch(e){}}

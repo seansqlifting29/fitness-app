@@ -183,6 +183,7 @@ python3 tests/swap_sync.py
 python3 tests/swap_ready.py
 python3 tests/rest_position.py
 python3 tests/sound_wake.py
+python3 tests/beep_sim.py   # 1000 simulated workouts: every get-set chime, countdown and go tone
 python3 tests/cardio_lock.py
 python3 tests/unit.py
 python3 tests/tour.py
