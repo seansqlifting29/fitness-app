@@ -65,7 +65,7 @@ async (seed)=>{const NOTIFY=__NOTIFY__,APPSW=__APPSW__,PAUSES=__PAUSES__;let swi
   S.hooks=[()=>{if(!ses)return;
     if(document.hidden)return;
     const since=Date.now()-ses.stateAt,left=ses.state==='setup'?(ses.setupMs||10000)-since:1e9;
-    const want=ses.state==='setup'&&!ses.pausedAt&&left>0;const has=!!document.getElementById('edgeglow');
+    const want=ses.state==='setup'&&!ses.pausedAt&&left>0;const eg=document.getElementById('edgeglow');const has=!!eg&&(eg.className===undefined||eg.className!=='');
     if(since>300&&Math.abs(left)>300){G.glowChecks++;if(want!==has){G.glowWrong++;if(!G.ex)G.ex={state:ses.state,since,left,has,paused:!!ses.pausedAt}}}
     if(document.getElementById('sndbar')&&!(ses.startedAt&&!ses.finished))G.pillOutside++;
     const d=S.lastTick||0;if(d>G.maxTickMs)G.maxTickMs=d;if(d>50)G.slowTicks++;if(ses.state==='setup'&&last!=='setup')phases.push({t:__now(),rest:!!ses.posFromRest,ms:ses.setupMs||10000,ev:ev.slice(-3)});if(last==='setup'&&ses.state!=='setup'&&phases.length)phases[phases.length-1].end=__now();last=ses.state}];

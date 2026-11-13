@@ -121,6 +121,14 @@ async def main():
         await pg.mouse.click(200, 300); await pg.wait_for_timeout(700)
         ok(660 in await tones() and 1100 in await tones(), 'the missed get-set chime plays on the touch that brings the sound back')
 
+        # get into position: the edge pulses softly, then hard from the first countdown beep; gone when lifting
+        await ev("closeState();ses.state='setup';ses.pausedAt=null;ses.stateAt=Date.now();ses.setupMs=9000;ses.cdBeep=null;save();tick()"); await pg.wait_for_timeout(100)
+        ok(await ev("document.getElementById('edgeglow').className") == 'gsoft' and await ev("getComputedStyle(document.getElementById('edgeglow')).pointerEvents") == 'none', 'getting into position starts a soft pulse on the edge that ignores touches')
+        await ev("ses.stateAt=Date.now()-4500;tick()"); await pg.wait_for_timeout(50)
+        ok(await ev("document.getElementById('edgeglow').className") == 'ghard' and await ev("ses.cdBeep") == 5, 'the hard pulse starts on the same tick as the first countdown beep')
+        await ev("ses.state='lift';ses.stateAt=Date.now();save();tick()"); await pg.wait_for_timeout(50)
+        ok(await ev("document.getElementById('edgeglow').className") == '', 'the edge goes dark once lifting starts')
+
         # ending warm-ups plays the same chime as getting into position
         await ev("closeState();ses.state='warm';ses.stateAt=Date.now()-60000;ses.active=0;FA.starts=[];save();endWarm()"); await pg.wait_for_timeout(600)
         _t = await tones(); ok(all(f in _t for f in (660, 880, 1100)), 'ending warm-ups plays the get-into-position chime')

@@ -598,6 +598,7 @@ input{font:inherit;color:inherit}
 .an-pchips button{padding:8px 9px;border-radius:16px;background:var(--card2);color:var(--t2);font-weight:700;font-size:12.5px;white-space:nowrap}
 .an-pchips button.on{background:var(--t1);color:#111}
 #sndbar{position:fixed;right:14px;top:calc(12px + env(safe-area-inset-top));z-index:60;display:flex;align-items:center;gap:8px;background:#e5484d;color:#fff;font-weight:800;font-size:14px;padding:11px 16px;border-radius:999px;box-shadow:0 6px 24px rgba(0,0,0,.45);white-space:nowrap;animation:sndin .25s ease-out}@keyframes sndin{from{opacity:0;transform:translateY(-8px)}}
+#edgeglow{position:fixed;inset:0;z-index:55;pointer-events:none;border:5px solid #7fb2ea;border-radius:max(14px,env(safe-area-inset-top));opacity:0}#edgeglow.gsoft{animation:gsoft 1s ease-in-out infinite}#edgeglow.ghard{animation:ghard 1s ease-out infinite}@keyframes gsoft{0%,100%{opacity:.15}50%{opacity:.55}}@keyframes ghard{0%{opacity:1}100%{opacity:.3}}
 </style>
 </head>
 <body>
@@ -1167,6 +1168,9 @@ function phase(){
   if(ses.state==='next')return{k:'next',label:'Next station',ms:now-ses.stateAt};
   return{k:'idle',label:'Ready',ms:0};
 }
+// get into position: the screen edge pulses softly, then hard once a second from the first countdown beep.
+// One border made once; the timer only switches it between off, soft and hard, and the phone animates it
+function edge(c){if(edge.c===c)return;edge.c=c;try{let g=document.getElementById('edgeglow');if(!g){g=document.createElement('div');g.id='edgeglow';document.body.appendChild(g)}g.className=c}catch(e){}}
 // the timer ticks 4 times a second; a gap of several seconds means the app was in the background
 // (a last resort for a browser that sends none of the signals above). It only reads the clock: rest and set times
 // still come from real time, so nothing about the workout changes
@@ -1179,7 +1183,7 @@ function tickInner(){
     const stale=open?(idle>IDLE_LIMIT||(newDay&&idle>3600000)):newDay;
     if(stale&&!tick.rolling){tick.rolling=true;try{render()}finally{tick.rolling=false}return}}
   if(ses.state==='setup'&&!ses.pausedAt){const left=(ses.setupMs||SETUP_MS)-(Date.now()-ses.stateAt);const sec=Math.ceil(left/1000);
-    if(sec>=1&&sec<=5&&ses.cdBeep!==sec){ses.cdBeep=sec;tone(520+(5-sec)*110,.12)}}
+    if(sec>=1&&sec<=5&&ses.cdBeep!==sec){ses.cdBeep=sec;tone(520+(5-sec)*110,.12)}edge(sec>5?'gsoft':sec>=1?'ghard':'')}else if(edge.c)edge('')
   if(ses.state==='rest'&&!ses.pausedAt&&ses.active!==null&&ses.ex[ses.active]&&curIdx(ses.ex[ses.active])>0){const left=ses.restTarget-(Date.now()-ses.stateAt);if(left<=posMs(ses.active)){toPosition(Math.max(5000,left));return}}
   if(ses.state==='setup'&&!ses.pausedAt&&Date.now()-ses.stateAt>=(ses.setupMs||SETUP_MS)){tone(1180,.45);const se=ses.ex[ses.active];if(se&&!ses.posFromRest)recordSetup(se.name,curIdx(se),ses.setupMs||SETUP_MS);liftGap(se);ses.state='lift';ses.stateAt+=(ses.setupMs||SETUP_MS);save();if(tab==='today')render();return}
   if(tab!=='today')return;
