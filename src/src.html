@@ -597,7 +597,8 @@ input{font:inherit;color:inherit}
 .an-pchips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 5px;margin-top:14px}
 .an-pchips button{padding:8px 9px;border-radius:16px;background:var(--card2);color:var(--t2);font-weight:700;font-size:12.5px;white-space:nowrap}
 .an-pchips button.on{background:var(--t1);color:#111}
-#sndbar{position:fixed;right:14px;top:calc(12px + env(safe-area-inset-top));z-index:60;display:flex;align-items:center;gap:8px;background:#f0efec;color:#111;font-weight:800;font-size:14px;padding:11px 16px;border-radius:999px;box-shadow:0 6px 24px rgba(0,0,0,.45);white-space:nowrap;animation:sndin .25s ease-out}@keyframes sndin{from{opacity:0;transform:translateY(-8px)}}
+#sndbar{position:fixed;right:14px;top:calc(12px + env(safe-area-inset-top));z-index:60;display:flex;align-items:center;gap:8px;background:#e5484d;color:#fff;font-weight:800;font-size:14px;padding:11px 16px;border-radius:999px;box-shadow:0 6px 24px rgba(0,0,0,.45);white-space:nowrap;animation:sndin .25s ease-out}@keyframes sndin{from{opacity:0;transform:translateY(-8px)}}
+#edgeglow{position:fixed;inset:0;z-index:55;pointer-events:none;border:5px solid #7fb2ea;border-radius:max(14px,env(safe-area-inset-top));opacity:0;will-change:opacity}
 </style>
 </head>
 <body>
@@ -819,7 +820,7 @@ function startSet(i){
 }
 // open an exercise; right after finishing one, the transition timer carries over to it
 function moveTo(k){focus=k;nextPick=null;if(ses.state==='next'&&ses.ex[k]&&!exDone(ses.ex[k])){ses.active=k;save()}render()}
-function endWarm(){if(ses.state!=='warm')return;ses.warm=(ses.warm||0)+nowT()-ses.stateAt;ses.warmDone=true;const i=ses.active;(ses.warmed=ses.warmed||[]).push(i);ses.state='idle';startSet(i)}
+function endWarm(){if(ses.state!=='warm')return;ses.warm=(ses.warm||0)+nowT()-ses.stateAt;ses.warmDone=true;const i=ses.active;(ses.warmed=ses.warmed||[]).push(i);ses.state='idle';posChime();startSet(i)}
 function liftGap(e){const j=e?curIdx(e):-1;if(ses.posFromRest&&j>0&&e.lastEnd&&e.sets[j]){const gap=Date.now()-e.lastEnd;e.sets[j].rest=gap<20*60000?gap:null}}
 function goNow(){if(ses.state!=='setup')return;tone(1180,.45);const e=ses.ex[ses.active];if(e)recordSetup(e.name,curIdx(e),Date.now()-ses.stateAt);liftGap(e);ses.state='lift';ses.stateAt=Date.now();save();render()}
 function finishSet(i){
@@ -1167,6 +1168,12 @@ function phase(){
   if(ses.state==='next')return{k:'next',label:'Next station',ms:now-ses.stateAt};
   return{k:'idle',label:'Ready',ms:0};
 }
+// get into position: a soft pulse around the screen edge every second, and a hard one with each of the last
+// five beeps. Only the border's brightness changes (no redraw), and it ignores touches, so scrolling isn't affected
+function edgeGlow(sec){try{let g=document.getElementById('edgeglow');const on=sec>=1&&!document.hidden;
+  if(!on){if(g)g.remove();edgeGlow.s=0;return}if(!g){g=document.createElement('div');g.id='edgeglow';document.body.appendChild(g)}
+  if(sec===edgeGlow.s)return;edgeGlow.s=sec;const hard=sec<=5;
+  if(g.animate)g.animate(hard?[{opacity:.35},{opacity:1,offset:.1},{opacity:.35}]:[{opacity:.15},{opacity:.55},{opacity:.15}],{duration:hard?650:1000,easing:'ease-out',fill:'forwards'})}catch(e){}}
 // the timer ticks 4 times a second; a gap of several seconds means the app was in the background
 // (a last resort for a browser that sends none of the signals above). It only reads the clock: rest and set times
 // still come from real time, so nothing about the workout changes
@@ -1179,7 +1186,7 @@ function tickInner(){
     const stale=open?(idle>IDLE_LIMIT||(newDay&&idle>3600000)):newDay;
     if(stale&&!tick.rolling){tick.rolling=true;try{render()}finally{tick.rolling=false}return}}
   if(ses.state==='setup'&&!ses.pausedAt){const left=(ses.setupMs||SETUP_MS)-(Date.now()-ses.stateAt);const sec=Math.ceil(left/1000);
-    if(sec>=1&&sec<=5&&ses.cdBeep!==sec){ses.cdBeep=sec;tone(520+(5-sec)*110,.12)}}
+    if(sec>=1&&sec<=5&&ses.cdBeep!==sec){ses.cdBeep=sec;tone(520+(5-sec)*110,.12)}edgeGlow(sec)}else edgeGlow(0)
   if(ses.state==='rest'&&!ses.pausedAt&&ses.active!==null&&ses.ex[ses.active]&&curIdx(ses.ex[ses.active])>0){const left=ses.restTarget-(Date.now()-ses.stateAt);if(left<=posMs(ses.active)){toPosition(Math.max(5000,left));return}}
   if(ses.state==='setup'&&!ses.pausedAt&&Date.now()-ses.stateAt>=(ses.setupMs||SETUP_MS)){tone(1180,.45);const se=ses.ex[ses.active];if(se&&!ses.posFromRest)recordSetup(se.name,curIdx(se),ses.setupMs||SETUP_MS);liftGap(se);ses.state='lift';ses.stateAt+=(ses.setupMs||SETUP_MS);save();if(tab==='today')render();return}
   if(tab!=='today')return;

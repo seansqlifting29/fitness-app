@@ -121,6 +121,24 @@ async def main():
         await pg.mouse.click(200, 300); await pg.wait_for_timeout(700)
         ok(660 in await tones() and 1100 in await tones(), 'the missed get-set chime plays on the touch that brings the sound back')
 
+        # the pill is red, so it stands out
+        await ev("acAway=true;sndBar()"); await pg.wait_for_timeout(100)
+        ok(await ev("getComputedStyle(document.getElementById('sndbar')).backgroundColor") == 'rgb(229, 72, 77)', '"Tap for sound" is red')
+        await pg.mouse.click(200, 300); await pg.wait_for_timeout(300)
+
+        # get into position: the screen edge pulses, softly each second and hard with each of the last five beeps
+        await ev("closeState();ses.state='setup';ses.pausedAt=null;ses.stateAt=Date.now();ses.setupMs=9000;ses.cdBeep=null;edgeGlow.s=0;save();tick()"); await pg.wait_for_timeout(100)
+        ok(await ev("!!document.getElementById('edgeglow')") and await ev("getComputedStyle(document.getElementById('edgeglow')).pointerEvents") == 'none', 'getting into position lights a pulsing edge that ignores touches')
+        ok(await ev("edgeGlow.s") == 9, 'the edge pulses in step with the countdown seconds')
+        await ev("ses.stateAt=Date.now()-5500;tick()"); await pg.wait_for_timeout(50)
+        ok(await ev("edgeGlow.s") == 4 and await ev("ses.cdBeep") == 4, 'in the last five seconds the hard pulse lands on the same tick as the beep')
+        await ev("ses.state='lift';ses.stateAt=Date.now();save();tick()"); await pg.wait_for_timeout(50)
+        ok(await ev("!document.getElementById('edgeglow')"), 'the edge goes away once lifting starts')
+
+        # ending warm-ups plays the same chime as getting into position
+        await ev("closeState();ses.state='warm';ses.stateAt=Date.now()-60000;ses.active=0;FA.starts=[];save();endWarm()"); await pg.wait_for_timeout(600)
+        _t = await tones(); ok(all(f in _t for f in (660, 880, 1100)), 'ending warm-ups plays the get-into-position chime')
+
         # finishing releases the screen and stops the keep-alive
         stops = await ev("FA.stops"); rel = await ev("FA.released")
         await ev("ses.finished=true;save();keepAlive();screenOn()"); await pg.wait_for_timeout(200)
