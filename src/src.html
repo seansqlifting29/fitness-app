@@ -597,6 +597,7 @@ input{font:inherit;color:inherit}
 .an-pchips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 5px;margin-top:14px}
 .an-pchips button{padding:8px 9px;border-radius:16px;background:var(--card2);color:var(--t2);font-weight:700;font-size:12.5px;white-space:nowrap}
 .an-pchips button.on{background:var(--t1);color:#111}
+#sndbar{position:fixed;right:14px;top:calc(12px + env(safe-area-inset-top));z-index:60;display:flex;align-items:center;gap:8px;background:#f0efec;color:#111;font-weight:800;font-size:14px;padding:11px 16px;border-radius:999px;box-shadow:0 6px 24px rgba(0,0,0,.45);white-space:nowrap;animation:sndin .25s ease-out}@keyframes sndin{from{opacity:0;transform:translateY(-8px)}}
 </style>
 </head>
 <body>
@@ -936,7 +937,7 @@ function finishWorkout(){if(ses&&ses.pausedAt)resumeWorkout();
 // iOS can also mute the page's audio when a notification sound plays, while still reporting it as
 // running. Nothing in code can see that, so taps swap in a fresh audio connection once the current one
 // is more than a few seconds old: whatever a notification did, the next tap (Done, Start set) clears it.
-let ac=null,acKeep=null,acBorn=0;const AC_FRESH=8000;
+let ac=null,acKeep=null,acBorn=0,acDrop=0,acAway=false;const AC_FRESH=8000;
 function newAC(){try{if(ac&&ac.close)ac.close()}catch(e){}acKeep=null;ac=new (window.AudioContext||window.webkitAudioContext)();acBorn=Date.now();
   const me=ac;try{me.onstatechange=()=>{if(me!==ac||me.state==='running'||me.state==='closed')return;const on=typeof ses!=='undefined'&&ses&&ses.startedAt&&!ses.finished;if(on)setTimeout(()=>{if(me===ac&&me.state!=='running')me.resume().catch(()=>{})},300)}}catch(e){}}
 function unlock(){try{if(!ac)newAC();if(ac.state!=='running')ac.resume().catch(()=>{});keepAlive()}catch(e){}}
@@ -945,15 +946,23 @@ function wakeAudio(){try{if(!ac||ac.state==='closed'||Date.now()-acBorn>AC_FRESH
     // a tap: resume, and if the phone left it stuck, start over with a fresh one
     const p=ac.resume();const b=ac.createBuffer(1,1,22050),s=ac.createBufferSource();s.buffer=b;s.connect(ac.destination);s.start(0);
     Promise.resolve(p).then(()=>{if(ac.state!=='running'){newAC();ac.resume().catch(()=>{})}keepAlive()}).catch(()=>{})}catch(e){}}
+// after switching apps iOS pauses the sound and only a touch can start it again, so the app says so.
+// The touch that brings it back also plays the get-set chime if it was missed while the sound was paused.
+function soundBack(){try{const missed=acDrop&&typeof ses!=='undefined'&&ses&&ses.state==='setup'&&ses.posFromRest&&acDrop>=ses.stateAt;acAway=false;acDrop=0;sndBar();if(missed)setTimeout(()=>posChime(),250)}catch(e){}}
+function sndBar(){try{const live=typeof ses!=='undefined'&&ses&&ses.startedAt&&!ses.finished&&!ses.pausedAt&&cfg.sound;
+  const need=live&&!document.hidden&&(acAway||acDrop);let b=document.getElementById('sndbar');
+  if(!need){if(b)b.remove();return}if(b)return;b=document.createElement('div');b.id='sndbar';b.setAttribute('role','button');
+  b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Tap for sound</span>';
+  document.body.appendChild(b)}catch(e){}}
 // keep the screen on while a workout is running, so the phone doesn't sleep through rest and miss the beeps
 let wlock=null,wlBusy=false;
 function screenOn(){try{const on=typeof ses!=='undefined'&&ses&&ses.startedAt&&!ses.finished&&!ses.pausedAt&&!document.hidden;
   if(on&&!wlock&&!wlBusy&&navigator.wakeLock){wlBusy=true;navigator.wakeLock.request('screen').then(l=>{wlock=l;l.addEventListener('release',()=>{wlock=null})}).catch(()=>{}).finally(()=>{wlBusy=false})}
   else if(!on&&wlock){wlock.release().catch(()=>{});wlock=null}}catch(e){}}
-['pointerdown','touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{wakeAudio();screenOn()},{capture:true,passive:true}));
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ac)ac.resume().catch(()=>{});screenOn()});
+['pointerdown','touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{wakeAudio();screenOn();if(t!=='pointerdown'&&(acAway||acDrop))soundBack()},{capture:true,passive:true}));
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(typeof ses!=='undefined'&&ses&&ses.startedAt&&!ses.finished)acAway=true}else if(ac)ac.resume().catch(()=>{});screenOn();sndBar()});
 // play now if the audio is awake, otherwise as soon as it wakes (a beep due now is still worth hearing)
-function whenAudio(fn){try{if(!ac)newAC();if(ac.state==='running'){keepAlive();return fn()}const t0=Date.now(),p=ac.resume();Promise.resolve(p).then(()=>{if(ac.state==='running'&&Date.now()-t0<1500)fn()}).catch(()=>{})}catch(e){}}
+function whenAudio(fn){try{if(!ac)newAC();if(ac.state==='running'){keepAlive();return fn()}const t0=Date.now(),p=ac.resume();Promise.resolve(p).then(()=>{if(ac.state==='running'&&Date.now()-t0<1500)fn();else{acDrop=Date.now();sndBar()}}).catch(()=>{acDrop=Date.now();sndBar()})}catch(e){}}
 // get set: a short tone each of the last five seconds, rising, and a longer one when lifting starts
 function tone(f,len){if(!cfg.sound)return;whenAudio(()=>tone0(f,len))}
 function tone0(f,len){try{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.connect(g);g.connect(ac.destination);const t=ac.currentTime;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.28,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+len);o.start(t);o.stop(t+len+.02)}catch(e){}}
@@ -1157,7 +1166,7 @@ function phase(){
 function tick(){try{tickInner()}catch(e){console.error(e)}}
 function tickInner(){
   if(!ses)return;
-  if((tick.n=(tick.n||0)+1)%8===0)screenOn();
+  if((tick.n=(tick.n||0)+1)%8===0)screenOn();if(tick.n%4===0)sndBar();
   if(!document.querySelector('.scrim')&&focus===null&&!document.querySelector('.dghost')){
     const newDay=ses.date!==dkey(new Date());const open=ses.startedAt&&!ses.finished;const idle=Date.now()-ses.stateAt;
     const stale=open?(idle>IDLE_LIMIT||(newDay&&idle>3600000)):newDay;

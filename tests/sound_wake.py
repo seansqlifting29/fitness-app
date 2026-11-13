@@ -103,6 +103,16 @@ async def main():
         await ev("FA.resumeWorks=true;ac.state='interrupted';ac.onstatechange()"); await pg.wait_for_timeout(600)
         ok(await ev("ac.state") == 'running', 'an interruption during a workout is resumed on its own')
 
+        # switching apps: iOS pauses the sound and only a touch brings it back, so the app says so
+        await ev("Object.defineProperty(document,'hidden',{get:()=>true,configurable:true});document.dispatchEvent(new Event('visibilitychange'))")
+        await ev("Object.defineProperty(document,'hidden',{get:()=>false,configurable:true});document.dispatchEvent(new Event('visibilitychange'))"); await pg.wait_for_timeout(200)
+        ok(await ev("!!document.getElementById('sndbar')") and 'Tap for sound' in await ev("document.getElementById('sndbar').textContent"), 'coming back from another app mid-workout shows "Tap for sound"')
+        await pg.mouse.click(200, 300); await pg.wait_for_timeout(400)
+        ok(await ev("!document.getElementById('sndbar')"), 'one touch anywhere brings the sound back and the pill goes away')
+        await ev("ses.state='setup';ses.posFromRest=true;ses.stateAt=Date.now()-2000;acDrop=Date.now();FA.starts=[];save()")
+        await pg.mouse.click(200, 300); await pg.wait_for_timeout(700)
+        ok(660 in await tones() and 1100 in await tones(), 'the missed get-set chime plays on the touch that brings the sound back')
+
         # finishing releases the screen and stops the keep-alive
         stops = await ev("FA.stops"); rel = await ev("FA.released")
         await ev("ses.finished=true;save();keepAlive();screenOn()"); await pg.wait_for_timeout(200)
