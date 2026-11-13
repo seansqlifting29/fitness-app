@@ -121,6 +121,10 @@ async def main():
         await pg.mouse.click(200, 300); await pg.wait_for_timeout(700)
         ok(660 in await tones() and 1100 in await tones(), 'the missed get-set chime plays on the touch that brings the sound back')
 
+        # ending warm-ups plays the same chime as getting into position
+        await ev("closeState();ses.state='warm';ses.stateAt=Date.now()-60000;ses.active=0;FA.starts=[];save();endWarm()"); await pg.wait_for_timeout(600)
+        _t = await tones(); ok(all(f in _t for f in (660, 880, 1100)), 'ending warm-ups plays the get-into-position chime')
+
         # finishing releases the screen and stops the keep-alive
         stops = await ev("FA.stops"); rel = await ev("FA.released")
         await ev("ses.finished=true;save();keepAlive();screenOn()"); await pg.wait_for_timeout(200)

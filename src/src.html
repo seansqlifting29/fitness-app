@@ -819,7 +819,7 @@ function startSet(i){
 }
 // open an exercise; right after finishing one, the transition timer carries over to it
 function moveTo(k){focus=k;nextPick=null;if(ses.state==='next'&&ses.ex[k]&&!exDone(ses.ex[k])){ses.active=k;save()}render()}
-function endWarm(){if(ses.state!=='warm')return;ses.warm=(ses.warm||0)+nowT()-ses.stateAt;ses.warmDone=true;const i=ses.active;(ses.warmed=ses.warmed||[]).push(i);ses.state='idle';startSet(i)}
+function endWarm(){if(ses.state!=='warm')return;ses.warm=(ses.warm||0)+nowT()-ses.stateAt;ses.warmDone=true;const i=ses.active;(ses.warmed=ses.warmed||[]).push(i);ses.state='idle';posChime();startSet(i)}
 function liftGap(e){const j=e?curIdx(e):-1;if(ses.posFromRest&&j>0&&e.lastEnd&&e.sets[j]){const gap=Date.now()-e.lastEnd;e.sets[j].rest=gap<20*60000?gap:null}}
 function goNow(){if(ses.state!=='setup')return;tone(1180,.45);const e=ses.ex[ses.active];if(e)recordSetup(e.name,curIdx(e),Date.now()-ses.stateAt);liftGap(e);ses.state='lift';ses.stateAt=Date.now();save();render()}
 function finishSet(i){
