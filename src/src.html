@@ -961,6 +961,10 @@ function screenOn(){try{const on=typeof ses!=='undefined'&&ses&&ses.startedAt&&!
   else if(!on&&wlock){wlock.release().catch(()=>{});wlock=null}}catch(e){}}
 ['pointerdown','touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{wakeAudio();screenOn();if(t!=='pointerdown'&&(acAway||acDrop))soundBack()},{capture:true,passive:true}));
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(typeof ses!=='undefined'&&ses&&ses.startedAt&&!ses.finished)acAway=true}else if(ac)ac.resume().catch(()=>{});screenOn();sndBar()});
+// browsers differ in what they say when you switch apps (Firefox on iPhone may not send the one above), so listen for all of them
+const awayNow=()=>{if(typeof ses!=='undefined'&&ses&&ses.startedAt&&!ses.finished)acAway=true};
+window.addEventListener('pagehide',awayNow);window.addEventListener('blur',awayNow);
+window.addEventListener('pageshow',()=>{if(ac)ac.resume().catch(()=>{});sndBar()});window.addEventListener('focus',()=>{if(ac)ac.resume().catch(()=>{});sndBar()});
 // play now if the audio is awake, otherwise as soon as it wakes (a beep due now is still worth hearing)
 function whenAudio(fn){try{if(!ac)newAC();if(ac.state==='running'){keepAlive();return fn()}const t0=Date.now(),p=ac.resume();Promise.resolve(p).then(()=>{if(ac.state==='running'&&Date.now()-t0<1500)fn();else{acDrop=Date.now();sndBar()}}).catch(()=>{acDrop=Date.now();sndBar()})}catch(e){}}
 // get set: a short tone each of the last five seconds, rising, and a longer one when lifting starts
@@ -1163,7 +1167,10 @@ function phase(){
   if(ses.state==='next')return{k:'next',label:'Next station',ms:now-ses.stateAt};
   return{k:'idle',label:'Ready',ms:0};
 }
-function tick(){try{tickInner()}catch(e){console.error(e)}}
+// the timer ticks 4 times a second; a gap of several seconds means the app was in the background
+// (a last resort for a browser that sends none of the signals above). It only reads the clock: rest and set times
+// still come from real time, so nothing about the workout changes
+function tick(){try{const n=Date.now(),gap=n-(tick.last||n);tick.last=n;if(gap>3000&&typeof ses!=='undefined'&&ses&&ses.startedAt&&!ses.finished){acAway=true;sndBar()}tickInner()}catch(e){console.error(e)}}
 function tickInner(){
   if(!ses)return;
   if((tick.n=(tick.n||0)+1)%8===0)screenOn();if(tick.n%4===0)sndBar();
