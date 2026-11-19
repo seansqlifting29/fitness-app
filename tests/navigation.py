@@ -15,6 +15,7 @@ async def main():
     ov="document.querySelectorAll('#app > .scrim, #app > .an-scrim').length"
     async def back():
       await pg.go_back(wait_until='commit');await pg.wait_for_timeout(250)
+    import datetime;await pg.clock.set_system_time(datetime.datetime(2026,11,11,10))  # a Wednesday: the sample plan trains that day
     await pg.goto(BASE+'preview.html');await pg.wait_for_timeout(1200)
     url0=pg.url
     # analytics: advanced -> overview -> today

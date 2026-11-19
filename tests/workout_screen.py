@@ -37,7 +37,7 @@ async def main():
     ok(await pg.evaluate('ses.ex[0].sets[0].done'),'set is logged')
     await pg.evaluate("ses.state='idle';ses.lastSet=null;render()");await pg.wait_for_timeout(200)
     ok('Previous set' in await pg.locator('.wtg').text_content() and 'Target' not in await pg.locator('.wtg').text_content(),'set 2 shows the previous set, not the target')
-    await pg.evaluate("ses.state='rest';ses.lastSet={e:0,s:0};render()");await pg.wait_for_timeout(200)
+    await pg.evaluate("ses.state='rest';ses.stateAt=Date.now();ses.restTarget=120000;ses.lastSet={e:0,s:0};render()");await pg.wait_for_timeout(200)
     r0=await pg.evaluate('ses.ex[0].sets[0].r');await pg.click('[data-adj="r:1"]');await pg.wait_for_timeout(100)
     ok(await pg.evaluate('ses.ex[0].sets[0].r')==r0+1,'reps are adjusted right after the set')
     ok(await pg.locator('.bubs .bub.info').count()==1,'after +10 s, rest shows bubbles about get set for that exercise')

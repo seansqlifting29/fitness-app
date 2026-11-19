@@ -3,7 +3,7 @@
 (function(){const st=document.createElement('style');st.textContent=`
 .an-hd{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 20px 10px}
 .an-hd h1{font-size:24px;font-weight:800;letter-spacing:-.5px;line-height:38px;display:flex;align-items:center;gap:10px}
-.an-sample{font-size:10.5px;font-weight:900;letter-spacing:.8px;color:var(--t3);border:1px solid #3a3a37;border-radius:8px;padding:3px 6px;cursor:pointer}
+.an-sample{white-space:nowrap;font-size:10.5px;font-weight:900;letter-spacing:.8px;color:var(--t3);border:1px solid #3a3a37;border-radius:8px;padding:3px 6px;cursor:pointer}
 .an-editb{background:var(--card2);border-radius:14px;padding:8px 14px;font-weight:800;font-size:14px;color:var(--t2)}
 .an-editb.on{background:var(--t1);color:#111}
 .an-seg{display:flex;gap:4px;margin:0 14px 12px;background:var(--card);border-radius:16px;padding:4px}
@@ -20,6 +20,7 @@
 .an-card .an-k{font-size:11.5px;font-weight:900;letter-spacing:1px}
 .an-card h3{font-size:22px;font-weight:900;letter-spacing:-.5px;line-height:1.12;margin:4px 0 10px;padding-right:30px}
 .an-card h3 span{opacity:.5}
+.an-card h3 small,.wk-h small{display:block;font-size:14px;font-weight:700;color:var(--t3);letter-spacing:-.1px;margin-top:4px;line-height:1.3}
 .an-card .an-more{position:absolute;z-index:3;right:14px;top:14px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:900;background:#2a2a28;color:var(--t2)}
 .an-card .an-ctl{position:absolute;right:12px;top:12px;display:flex;gap:6px;z-index:3}
 .an-card .an-ctl button{width:32px;height:32px;border-radius:50%;background:#2e2e2b;color:#fff;font-size:15px;font-weight:900}
@@ -69,6 +70,12 @@ svg.ch{display:block;width:100%;height:auto;overflow:visible}
 
 .an-hd,.an-seg,.an-exsel,.an-card,.an-addc,.an-nolift{flex-shrink:0}
 .an-exsel button{line-height:1.25}
+.an-exdd{padding:0 14px 12px;flex-shrink:0}
+.an-exdd button{width:100%;display:flex;align-items:center;gap:8px;background:var(--card2);border-radius:16px;padding:11px 14px;text-align:left;min-width:0}
+.an-exdd span{font-size:12px;font-weight:900;letter-spacing:.8px;color:var(--t3);text-transform:uppercase}
+.an-exdd i{width:10px;height:10px;border-radius:50%;border:1.5px solid #f0efec;flex:none}
+.an-exdd b{flex:1;min-width:0;font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.an-exdd em{font-style:normal;color:var(--t2);font-weight:800}
 .an-rings{margin:0 14px 10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;flex-shrink:0}
 .an-ring{background:#1a1a19;border:1px solid #242423;border-radius:24px;padding:14px 10px 14px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
 .an-ring svg{width:118px;height:118px;display:block}
@@ -91,10 +98,12 @@ svg.ch{display:block;width:100%;height:auto;overflow:visible}
 .an-tier svg{width:30px;height:30px;flex:none}.an-tier b{font-size:15px}.an-tier span{margin-left:auto;font-size:13px;font-weight:700;color:#a9a89f}
 .an-tier.got span{color:var(--t1)}
 .an-lock{background:#151514;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px}
-.an-lock b{font-size:15px}.an-lock span{font-size:13px;color:#8a8980}
+.an-lock b{font-size:15px}.an-why{font-size:13px;color:var(--t3);font-weight:600;margin:10px 2px 0;line-height:1.35}.an-lock .an-lk{width:14px;height:14px;margin-right:7px;vertical-align:-1px;color:#8a8980}.an-lock span{font-size:13px;color:#8a8980}
 .an-lock .an-pb{height:6px;border-radius:3px;background:#2a2a28;overflow:hidden}.an-lock .an-pb i{display:block;height:100%;background:#f0efec;border-radius:3px}
 .an-nolift{margin:0 14px 12px;background:#1a1a19;border-radius:24px;padding:22px;color:#8a8980;font-size:14px;line-height:1.45}
 .an-nolift b{display:block;color:#f0efec;font-size:17px;margin-bottom:4px}
+.an-hd h1{min-width:0}
+@media (max-width:360px){.an-hd{padding:18px 14px 10px}.an-hd h1{font-size:21px;gap:6px}.an-sample{font-size:9px;padding:2px 4px;letter-spacing:.5px}}
 `;document.head.appendChild(st)})();
 const DAY=864e5;const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN;
 const e1rm=s=>s.w*(1+s.r/30);// Epley
@@ -151,16 +160,16 @@ function mark(x,y,shape,col,r,ring='#f0efec'){const st=`stroke="${ring}" stroke-
 const nice=(lo,hi,n=3)=>{const span=hi-lo||1;const st=Math.pow(10,Math.floor(Math.log10(span/n)));const m=[1,2,2.5,5,10].find(k=>span/(k*st)<=n+1)*st;const a=Math.floor(lo/m)*m,b=Math.ceil(hi/m)*m;const t=[];for(let v=a;v<=b+1e-9;v+=m)t.push(+v.toFixed(6));return t};
 function chart(c,accent){const pad={l:32,r:10,t:16,b:22},h=c.ht||170;
   const allY=c.series.flatMap(S=>S.pts.map(p=>p.y)),allX=c.series.flatMap(S=>S.pts.map(p=>p.x));if(!allY.length)return `<div class="an-empty">Not enough sets yet for this one.</div>`;
-  const yt=c.yt||nice(Math.min(...allY),Math.max(...allY));const xr=c.xr||[Math.min(...allX),Math.max(...allX)];const yr=[yt[0],yt[yt.length-1]];
+  const yt=c.yt||nice(Math.min(...allY),Math.max(...allY));pad.l=Math.max(26,Math.max(...yt.map(v=>String(c.yfmt(v)).length))*6.3+10);const xr=c.xr||[Math.min(...allX),Math.max(...allX)];const yr=[yt[0],yt[yt.length-1]];
   const X=v=>pad.l+(v-xr[0])/((xr[1]-xr[0])||1)*(W-pad.l-pad.r),Y=v=>pad.t+(1-(v-yr[0])/((yr[1]-yr[0])||1))*(h-pad.t-pad.b);
   let o=`<svg class="ch" viewBox="0 0 ${W} ${h}"><defs><filter id="gl" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="3"/></filter></defs>`;
-  if(c.band)o+=`<rect x="${X(c.band[0])}" y="${pad.t}" width="${Math.max(6,X(c.band[1])-X(c.band[0]))}" height="${h-pad.t-pad.b}" rx="10" fill="rgba(240,239,236,.06)"/>`;
+  if(c.band){const b0=Math.max(pad.l,X(c.band[0])),b1=Math.min(W-pad.r,X(c.band[1]));if(b1>b0)o+=`<rect x="${b0}" y="${pad.t}" width="${Math.max(6,b1-b0)}" height="${h-pad.t-pad.b}" rx="10" fill="rgba(240,239,236,.06)"/>`}
   yt.forEach(v=>o+=`<line x1="${pad.l}" x2="${W-pad.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="#262624"/><text x="${pad.l-6}" y="${Y(v)+3.5}" text-anchor="end" font-size="10" font-weight="600" fill="#8a8980">${c.yfmt(v)}</text>`);
-  (c.xt||nice(xr[0],xr[1],4).filter(v=>v>=xr[0]&&v<=xr[1])).forEach(v=>o+=`<text x="${X(v)}" y="${h-5}" text-anchor="middle" font-size="10" font-weight="600" fill="#8a8980">${c.xfmt(v)}</text>`);
+  (c.xt||nice(xr[0],xr[1],4).filter(v=>v>=xr[0]&&v<=xr[1])).forEach(v=>o+=xLab(X(v),h,c.xfmt(v)));
   c.series.forEach(S=>{const col=S.col||accent;
     if(S.pts.length>1&&!S.noLine)o+=`<path d="${S.pts.map((p,k)=>(k?'L':'M')+X(p.x).toFixed(1)+' '+Y(p.y).toFixed(1)).join('')}" fill="none" stroke="rgba(240,239,236,.8)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" ${S.dash?'stroke-dasharray="3 4"':''}/>`;
     S.pts.forEach(p=>{const isC=(c.crit||[]).some(q=>q.p===p);if(isC)o+=`<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="9" fill="${col}" opacity=".3" filter="url(#gl)"/>`;o+=mark(X(p.x),Y(p.y),S.shape||'c',p.col||col,isC?6.8:(S.r||5),S.ring||'#f0efec')})});
-  (c.crit||[]).forEach(q=>{const x=X(q.p.x),y=Y(q.p.y);const w=q.label.length*6.4+16;const lx=Math.min(W-pad.r-w/2,Math.max(pad.l+w/2,x));const ly=y-15<pad.t+6?y+24:y-17;
+  (c.crit||[]).forEach(q=>{const x=X(q.p.x),y=Y(q.p.y);const w=q.label.length*6.4+16;const lx=Math.min(W-pad.r-w/2,Math.max(pad.l+w/2,x));const ly=Math.max(10,y-15<pad.t+6?y+24:y-17);
     o+=`<rect x="${lx-w/2}" y="${ly-10}" width="${w}" height="18" rx="9" fill="#f0efec"/><text x="${lx}" y="${ly+3}" text-anchor="middle" font-size="10.5" font-weight="900" fill="#0e0e0e">${q.label}</text>`});
   c.series.forEach((S,si)=>S.pts.forEach((p,pi)=>{if(!S.tip)return;const dk=S.drill?regDrill(()=>S.drill(p,pi)):'';o+=`<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="${S.r&&S.r<4?7:13}" fill="transparent" data-tip="${S.tip(p)}${dk?'<br><small>Tap to see the sets</small>':''}" ${dk?`data-drill="${dk}"`:''}/>`}));
   o+='</svg>';
@@ -248,7 +257,7 @@ const CARDS={
     const under=M.filter(m=>m[1]<10).map(m=>m[0]);
     return{k:'WEEKLY SETS',h:`${low[0]}: ${low[1].toFixed(1)} a week`,custom:o+'</svg>',
       ins:{h:under.length===M.length?'Every muscle is under 10 sets a week.':under.length?`${under.join(', ')} ${under.length>1?'are':'is'} under 10 sets a week.`:'Every muscle gets 10 or more sets a week.',facts:M.slice().sort((a,b)=>b[1]-a[1]).slice(0,2).map(m=>[m[1].toFixed(1),m[0]+' sets a week']),p:['Counted from every logged set in the last 4 weeks, grouped by the muscle each exercise mainly works. The shaded band marks 10 to 20 sets a week, a common target range.'],n:R.length+' sets'}}}},
-  tens:{tab:'advanced',perLift:1,name:'Holding heavy',desc:'Longest you\'ve held each weight, early on vs lately',hex:'#c98500',make(){
+  tens:{tab:'advanced',perLift:1,name:'Holding heavy',desc:'How long you can hold each weight, now vs early on',hex:'#c98500',make(){
     const R=exT();const t0=R[0].start,t1=R[R.length-1].start,span=t1-t0;
     const edge=xs=>{const by={};xs.forEach(r=>{if(!by[r.w]||r.tut>by[r.w])by[r.w]=r.tut});let mx=-1;return Object.entries(by).map(([w,t])=>({x:t,y:+w})).sort((a,b)=>b.y-a.y).filter(p=>{if(p.x>mx){mx=p.x;return true}return false}).sort((a,b)=>a.y-b.y)};
     const a=edge(R.filter(r=>r.start<t0+span*.33)),b=edge(R.filter(r=>r.start>t1-span*.33));
@@ -256,9 +265,9 @@ const CARDS={
     return{k:'TIME UNDER TENSION',h:g?`${g.p.y} ${U()}: ${Math.round(g.then)}s → ${Math.round(g.p.x)}s`:'Holding heavy',ht:180,series:[{name:'Early on',col:S2,shape:'s',dash:true,pts:a,tip:p=>`<b>Early on</b> · ${p.y} ${U()}<br>held up to ${Math.round(p.x)}s`,drill:p=>atWeight(p.y)},{name:'Lately',col:S1,pts:b,tip:p=>`<b>Lately</b> · ${p.y} ${U()}<br>held up to ${Math.round(p.x)}s`,drill:p=>atWeight(p.y)}],
       xfmt:v=>v+'s',yfmt:v=>Math.round(v),crit:g?[{p:g.p,label:(g.p.x-g.then>=0?'+':'')+Math.round(g.p.x-g.then)+'s'}]:[],
       ins:{h:g?`At ${g.p.y} ${U()} you've lately held a set for up to ${Math.round(g.p.x)}s, against ${Math.round(g.then)}s early on.`:'Not enough repeated weights to compare yet.',facts:[[a.length?Math.max(...a.map(p=>p.y))+' '+U():'–','heaviest weight early on'],[b.length?Math.max(...b.map(p=>p.y))+' '+U():'–','heaviest weight lately']],p:['Each line is the longest time you\'ve held each weight, using only weights where nothing heavier was held longer. Early on is your first third of the year, lately is your last third.'],n:R.length+' sets of '+ex}}}},
-  len:{tab:'advanced',perLift:1,name:'Set length',desc:'Strength by how long the set lasts',hex:'#199e70',make(){
+  len:{tab:'advanced',perLift:1,name:'Set length',desc:'Shows which set length you\'re strongest at',hex:'#199e70',make(){
     const R=exT();const all=bins(R.map(r=>({x:r.tut,y:r.rel})),5,10,10,8);const l1=bins(R.filter(r=>r.set===1).map(r=>({x:r.tut,y:r.rel})),5,10,10,4),l2=bins(R.filter(r=>r.set>=2).map(r=>({x:r.tut,y:r.rel})),5,10,10,4);
-    const solid=all.filter(p=>p.n>=10);if(!solid.length)return{k:'SET LENGTH',h:'Set length',series:[]};
+    const solid=all.filter(p=>p.n>=10);if(!solid.length){let mx=0;for(let b=0;b<10;b++)mx=Math.max(mx,R.filter(r=>r.tut>=5+b*10&&r.tut<15+b*10).length);return{k:'SET LENGTH',h:'Set length',series:[],lock:[mx,10,'timed set']}}
     const best=solid.reduce((a,b)=>b.y>a.y?b:a,solid[0]);let i=all.indexOf(best),a=i,b=i;while(a>0&&all[a-1].n>=10&&all[a-1].y>=best.y-1)a--;while(b<all.length-1&&all[b+1].n>=10&&all[b+1].y>=best.y-1)b++;
     const lo=all[a].lo,hi=all[b].hi;const inB=R.filter(r=>r.tut>=lo&&r.tut<hi),past=R.filter(r=>r.tut>=hi);const after=R.filter(r=>r.tut>=lo);const rho=spearman(after.map(r=>r.tut),after.map(r=>r.rel));
     const crit1=l1.length?l1.reduce((x,y)=>Math.abs(y.x-best.x)<Math.abs(x.x-best.x)?y:x,l1[0]):null;
@@ -267,26 +276,26 @@ const CARDS={
       ins:{h:`Your sets lasting ${lo}–${hi}s averaged ${avg(inB.map(r=>r.rel)).toFixed(1)}% of your recent best.`+(past.length>=8?` Sets of ${hi}s or longer averaged ${avg(past.map(r=>r.rel)).toFixed(1)}%.`:` You rarely go longer than ${hi}s.`),
         facts:[[avg(inB.map(r=>r.rel)).toFixed(1)+'%',`in ${lo}–${hi}s (${inB.length} sets)`],[(avg(R.filter(r=>r.set===1).map(r=>r.rel))-avg(R.filter(r=>r.set>=2).map(r=>r.rel))).toFixed(1)+' pts','lower on set 2+ than set 1']],
         p:[`From ${lo}s on, longer sets show ${linkWord(rho)} ${rho<0?'downward':'upward'} link with strength (ρ = ${rho.toFixed(2)}).`,'Strength here is each set\'s one-rep max as a share of your best on this lift within 3 weeks either side, so it isn\'t thrown off by getting stronger over the year.'],n:R.length+' sets of '+ex}}}},
-  rest:{tab:'advanced',perLift:1,name:'Rest',desc:'Reps you keep by how long you rest',hex:'#e66767',make(){
+  rest:{tab:'advanced',perLift:1,name:'Rest',desc:'Shows how much rest you need to get your reps back',hex:'#e66767',make(){
     const R=exSets().filter(r=>r.rest!=null&&r.prevW===r.w&&r.prevR>=4).map(r=>({x:r.rest,y:r.r/r.prevR*100,set:r.set,t:r.start,w:r.w,r:r.r}));
     const rd=(lab,col,f)=>p=>rawDrill('REST · '+lab.toUpperCase(),col,R,q=>f(q)&&q.x>=p.lo&&q.x<p.hi,v=>mmss(v),v=>v.toFixed(0)+'%',`on ${lab.toLowerCase()} after ${mmss(p.lo)}–${mmss(p.hi)} rest`);
-    const a=bins(R.filter(r=>r.set===2),30,30,8),b=bins(R.filter(r=>r.set>=3),30,30,8);if(!a.length)return{k:'REST',h:'Rest',series:[]};
+    const a=bins(R.filter(r=>r.set===2),30,30,8),b=bins(R.filter(r=>r.set>=3),30,30,8);if(!a.length){let mx=0;for(let q=30;q<270;q+=30)mx=Math.max(mx,R.filter(r=>r.set===2&&r.x>=q&&r.x<q+30).length);return{k:'REST',h:'Rest',series:[],lock:[mx,4,'timed set 2']}}
     const full=a.find(p=>p.y>=95)||a.reduce((x,y)=>y.y>x.y?y:x,a[0]);const rho=spearman(R.map(r=>r.x),R.map(r=>r.y));const short=a[0];
     return{k:'REST',h:`${Math.round(full.y)}% of reps back by ${mmss(full.hi)}`,series:[{name:'Set 2',col:S2,shape:'s',pts:a,tip:p=>`<b>Set 2</b> after ${mmss(p.lo)}–${mmss(p.hi)}<br>kept ${p.y.toFixed(0)}% of your reps · ${p.n} sets`,drill:rd('Set 2',S2,q=>q.set===2)},{name:'Set 3+',col:S3,shape:'t',pts:b,tip:p=>`<b>Set 3+</b> after ${mmss(p.lo)}–${mmss(p.hi)}<br>kept ${p.y.toFixed(0)}% of your reps · ${p.n} sets`,drill:rd('Set 3+',S3,q=>q.set>=3)}],
       xfmt:v=>mmss(v),yfmt:v=>v+'%',crit:[{p:full,label:mmss(full.hi)}],
       ins:{h:`After ${mmss(short.lo)}–${mmss(short.hi)} of rest you kept ${short.y.toFixed(0)}% of your reps. After ${mmss(full.lo)}–${mmss(full.hi)}, ${full.y.toFixed(0)}%.`,facts:[[short.y.toFixed(0)+'%',`reps kept after ${mmss(short.hi)} or less`],[full.y.toFixed(0)+'%',`reps kept after ${mmss(full.lo)}–${mmss(full.hi)}`]],
         p:[`Longer rest shows ${linkWord(rho)} link with keeping your reps (ρ = ${rho.toFixed(2)}).`,'Each set is compared with the set before it at the same weight, so a change in weight never counts as lost reps.'],n:R.length+' set pairs of '+ex}}}},
-  tempo:{tab:'advanced',perLift:1,name:'Tempo',desc:'Seconds per rep against strength',hex:'#9085e9',make(){
-    const R=exT().filter(r=>r.set===1);const pts=qbins(R.map(r=>({x:r.pace,y:r.rel})),7);if(!pts.length)return{k:'TEMPO',h:'Tempo',series:[]};const best=pts.reduce((a,b)=>b.y>a.y?b:a,pts[0]);const rho=spearman(R.map(r=>r.pace),R.map(r=>r.rel));
+  tempo:{tab:'advanced',perLift:1,name:'Tempo',desc:'Shows which rep speed you\'re strongest at',hex:'#9085e9',make(){
+    const R=exT().filter(r=>r.set===1);const pts=qbins(R.map(r=>({x:r.pace,y:r.rel})),7);if(!pts.length)return{k:'TEMPO',h:'Tempo',series:[],lock:[R.length,8,'timed first set']};const best=pts.reduce((a,b)=>b.y>a.y?b:a,pts[0]);const rho=spearman(R.map(r=>r.pace),R.map(r=>r.rel));
     return{k:'TEMPO',h:`Best around ${best.x.toFixed(1)}s a rep`,ht:150,series:[{pts,tip:p=>`<b>${p.lo.toFixed(1)}–${p.hi.toFixed(1)}s per rep</b><br>${p.y.toFixed(1)}% of your recent best · ${p.n} sets`,drill:p=>rawDrill('TEMPO',LCOL[ex],R.map(r=>({x:r.pace,y:r.rel,t:r.start,w:r.w,r:r.r})),q=>q.x>=p.lo&&q.x<=p.hi,v=>v.toFixed(1)+'s',v=>v.toFixed(0)+'%',`at ${p.lo.toFixed(1)}–${p.hi.toFixed(1)}s a rep`)}],xfmt:v=>v.toFixed(1)+'s',yfmt:v=>v+'%',crit:[{p:best,label:'Best'}],
       ins:{h:`First sets at ${best.lo.toFixed(1)}–${best.hi.toFixed(1)}s a rep averaged ${best.y.toFixed(1)}% of your recent best.`,facts:[[best.y.toFixed(1)+'%','at your best pace'],[pts[pts.length-1].y.toFixed(1)+'%','at your slowest pace']],p:[`Pace shows ${linkWord(rho)} link with strength overall (ρ = ${rho.toFixed(2)}).`,'Pace is time under tension divided by reps. First sets only.'],n:R.length+' first sets'}}}},
-  gap:{tab:'advanced',perLift:1,name:'Days off',desc:'Strength by days since your last session',hex:'#d95926',make(){
+  gap:{tab:'advanced',perLift:1,name:'Days off',desc:'Shows how days off affect your strength',hex:'#d95926',make(){
     const R=exSets().filter(r=>r.set===1&&r.gapD!=null);const G=[[1,1,'1 day'],[2,3,'2–3 days'],[4,6,'4–6 days'],[7,99,'7+ days']].map(([a,b,l],i)=>{const xs=R.filter(r=>r.gapD>=a&&r.gapD<=b);return{x:i,y:avg(xs.map(r=>r.rel)),n:xs.length,l}}).filter(p=>p.n>=3);
-    if(!G.length)return{k:'DAYS OFF',h:'Days off',series:[]};const best=G.reduce((a,b)=>b.y>a.y?b:a,G[0]),worst=G.reduce((a,b)=>b.y<a.y?b:a,G[0]);
+    if(!G.length){const gg=[[1,1],[2,3],[4,6],[7,99]].map(([a,b])=>R.filter(r=>r.gapD>=a&&r.gapD<=b).length);return{k:'DAYS OFF',h:'Days off',series:[],lock:[Math.max(...gg),3,'session']}}const best=G.reduce((a,b)=>b.y>a.y?b:a,G[0]),worst=G.reduce((a,b)=>b.y<a.y?b:a,G[0]);
     return{k:'DAYS OFF',h:`Strongest after ${best.l} off`,ht:150,series:[{pts:G,tip:p=>`<b>${p.l} off</b><br>${p.y.toFixed(1)}% of your recent best · ${p.n} sessions`,drill:p=>{const rng={'1 day':[1,1],'2–3 days':[2,3],'4–6 days':[4,6],'7+ days':[7,99]}[p.l];const xs=R.filter(r=>r.gapD>=rng[0]&&r.gapD<=rng[1]);return{k:'DAYS OFF',h:`${xs.length} sessions after ${p.l} off`,rows:xs.map(r=>[fmtDay(r.start),`${r.w} ${U()} × ${r.r}`,r.rel.toFixed(0)+'%'])}}}],xr:[-.4,G.length-.6],xt:G.map(p=>p.x),xfmt:i=>(G.find(p=>p.x===i)||{}).l||'',yfmt:v=>v+'%',crit:[{p:best,label:'Best'}],
       ins:{h:`After ${best.l} off your first set averaged ${best.y.toFixed(1)}% of your recent best, against ${worst.y.toFixed(1)}% after ${worst.l} off.`,facts:[[best.y.toFixed(1)+'%',`after ${best.l} (${best.n} sessions)`],[worst.y.toFixed(1)+'%',`after ${worst.l} (${worst.n} sessions)`]],p:['Days off counts calendar days since your previous session of any kind. First sets only.'],n:R.length+' sessions with '+ex}}}},
-  tod:{tab:'advanced',perLift:1,name:'Time of day',desc:'Strength by the hour you start',hex:'#d55181',make(){
-    const R=exSets().filter(r=>r.set===1);const pts=bins(R.map(r=>({x:r.hour,y:r.rel})),5,3,6,3);if(pts.length<2)return{k:'TIME OF DAY',h:'Time of day',series:[]};const best=pts.reduce((a,b)=>b.y>a.y?b:a,pts[0]),worst=pts.reduce((a,b)=>b.y<a.y?b:a,pts[0]);
+  tod:{tab:'advanced',perLift:1,name:'Time of day',desc:'Shows which time of day you\'re strongest',hex:'#d55181',make(){
+    const R=exSets().filter(r=>r.set===1);const pts=bins(R.map(r=>({x:r.hour,y:r.rel})),5,3,6,3);if(pts.length<2)return{k:'TIME OF DAY',h:'Time of day',series:[],lock:[pts.length,2,'tod']};const best=pts.reduce((a,b)=>b.y>a.y?b:a,pts[0]),worst=pts.reduce((a,b)=>b.y<a.y?b:a,pts[0]);
     return{k:'TIME OF DAY',h:`Strongest ${hh(best.lo)}–${hh(best.hi)}`,ht:150,series:[{pts,tip:p=>`<b>${hh(p.lo)} to ${hh(p.hi)}</b><br>${p.y.toFixed(1)}% of your recent best · ${p.n} sessions`,drill:p=>rawDrill('TIME OF DAY',LCOL[ex],R.map(r=>({x:r.hour,y:r.rel,t:r.start,w:r.w,r:r.r})),q=>q.x>=p.lo&&q.x<p.hi,v=>hh(v),v=>v.toFixed(0)+'%',`starting ${hh(p.lo)}–${hh(p.hi)}`)}],xr:[5,23],xt:[6,9,12,15,18,21],xfmt:v=>hh(v),yfmt:v=>v+'%',crit:[{p:best,label:'Peak'}],
       ins:{h:`Sessions starting ${hh(best.lo)}–${hh(best.hi)} averaged ${best.y.toFixed(1)}%, against ${worst.y.toFixed(1)}% for ${hh(worst.lo)}–${hh(worst.hi)}.`,facts:[[pts.reduce((a,p)=>p.n>a.n?p:a,pts[0]).n,`sessions at ${hh(pts.reduce((a,p)=>p.n>a.n?p:a,pts[0]).lo)}–${hh(pts.reduce((a,p)=>p.n>a.n?p:a,pts[0]).hi)}, your usual time`],[(best.y-worst.y).toFixed(1)+' pts','between best and worst windows']],p:['Windows with fewer than 3 sessions are left out. First sets only.'],n:R.length+' sessions with '+ex}}}},
 };
@@ -347,14 +356,240 @@ const NEEDS={
   custom:()=>[timedEx().length,20,'timed set of '+ex],
 };
 const plural=(n,w)=>n===1?w:w.replace(/^(\w+)/,m=>m.endsWith('h')||m.endsWith('s')?m+'es':m+'s');
+/* ===== stats study cards (branch C) and the end-of-workout charts =====
+   Every number is worked out from your logged sets. Cards that need more history stay locked until it's there. */
+const EXC=['#199e70','#3987e5','#d95926','#c98500','#9085e9','#d55181'];
+const rng=s=>()=>(s=(s*16807)%2147483647)/2147483647;
+const gridY=(ys,Y,fmt,l=32,r=10)=>ys.map(v=>`<line x1="${l}" x2="${W-r}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="#262624"/><text x="${l-6}" y="${(Y(v)+3.5).toFixed(1)}" text-anchor="end" font-size="10" font-weight="600" fill="#8a8980">${fmt(v)}</text>`).join('');
+// axis labels near an edge hug it instead of running past it
+const xLab=(x,h,t,a='middle')=>{const w=String(t).replace(/&#?\w+;/g,'x').length*7;if(a==='middle'){if(x+w/2>W){x=W;a='end'}else if(x-w/2<0){x=0;a='start'}}else if(a==='end'&&x>W)x=W;else if(a==='start'&&x<0)x=0;
+  return `<text x="${x.toFixed(1)}" y="${h-5}" text-anchor="${a}" font-size="10" font-weight="600" fill="#8a8980">${t}</text>`};
+const pillT=(x,y,t,l=32,r=10)=>{y=Math.max(11,y);const w=t.length*6.4+16;const lx=Math.min(W-r-w/2,Math.max(l+w/2,x));return `<rect x="${(lx-w/2).toFixed(1)}" y="${(y-10).toFixed(1)}" width="${w.toFixed(1)}" height="18" rx="9" fill="#f0efec"/><text x="${lx.toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="900" fill="#0e0e0e">${t}</text>`};
+const tipC=(x,y,tip,r=10)=>`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="transparent" data-tip="${tip}"/>`;
+const pathOf=pts=>pts.map((p,k)=>(k?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join('');
+// best set of the chosen lift in each session
+function sessBest(n){const by={};SETS.filter(r=>r.ex===n&&r.w>0).forEach(r=>{if(!by[r.si]||r.e1>by[r.si].e1)by[r.si]=r});return Object.values(by).sort((a,b)=>a.start-b.start)}
+// reps lost from set 1 to set 3 (or the last set if fewer), only when the weight didn't change
+function dropPct(sets){const s=(sets||[]).filter(x=>x&&x.r>0);if(s.length<2)return null;const k=Math.min(3,s.length),a=s.slice(0,k);if(a.some(x=>(+x.w||0)!==(+a[0].w||0)))return null;return Math.max(0,(1-a[k-1].r/a[0].r)*100)}
+function dropRows(n){const by={};SETS.filter(r=>r.ex===n).forEach(r=>{(by[r.si]=by[r.si]||[]).push(r)});return Object.values(by).map(L=>{L.sort((a,b)=>a.set-b.set);return{start:L[0].start,pct:dropPct(L)}}).filter(d=>d.pct!=null).sort((a,b)=>a.start-b.start)}
+function logFit(xs,ys){const lx=xs.map(Math.log);const mx=avg(lx),my=avg(ys);let a=0,b=0;lx.forEach((v,i)=>{a+=(v-mx)*(ys[i]-my);b+=(v-mx)**2});const k=b?a/b:0;const c=my-k*mx;const f=x=>c+k*Math.log(x);const sd=Math.sqrt(avg(ys.map((y,i)=>(y-f(xs[i]))**2)));return{f,k,sd}}
+function hitPairs(){const by={};exSets().forEach(r=>{(by[r.si]=by[r.si]||[]).push(r)});const out=[];
+  Object.values(by).forEach(L=>{L.sort((a,b)=>a.set-b.set);const s1=L[0];if(!s1||s1.set!==1)return;L.slice(1).forEach(r=>{if(r.rest!=null&&r.w===s1.w)out.push({x:r.rest,y:r.r>=s1.r-1?1:0,r,s1})})});return out}
+function logistic(P){const xs=P.map(p=>p.x),m=avg(xs),s=Math.sqrt(avg(xs.map(x=>(x-m)**2)))||1;let a=0,b=0;
+  for(let it=0;it<2500;it++){let ga=0,gb=0;P.forEach(p=>{const z=(p.x-m)/s;const q=1/(1+Math.exp(-(a+b*z)));ga+=q-p.y;gb+=(q-p.y)*z});a-=.3*ga/P.length;b-=.3*gb/P.length}
+  return x=>1/(1+Math.exp(-(a+b*(x-m)/s)))}
+function sessionKinds(){const F=[];HIST.forEach(S=>{const all=S.ex.flatMap(E=>E.sets||[]);const reps=all.filter(s=>s.w>0&&s.r>0).map(s=>s.r);const rests=all.filter(s=>s.rest).map(s=>s.rest/1000);
+    if(reps.length>=3&&rests.length>=2)F.push({S,x:avg(reps),y:avg(rests)/60})});if(F.length<15)return null;
+  const mx=avg(F.map(f=>f.x)),my=avg(F.map(f=>f.y)),sx=Math.sqrt(avg(F.map(f=>(f.x-mx)**2)))||1,sy=Math.sqrt(avg(F.map(f=>(f.y-my)**2)))||1;const Z=F.map(f=>[(f.x-mx)/sx,(f.y-my)/sy]);
+  const srt=[...Z].sort((a,b)=>a[0]-b[0]);let C=[srt[Math.floor(srt.length/6)],srt[Math.floor(srt.length/2)],srt[Math.floor(srt.length*5/6)]].map(c=>c.slice());let k=[];
+  for(let it=0;it<40;it++){k=Z.map(z=>{let bi=0,bd=1e9;C.forEach((c,j)=>{const d=(z[0]-c[0])**2+(z[1]-c[1])**2;if(d<bd){bd=d;bi=j}});return bi});C=C.map((c,j)=>{const m=Z.filter((z,i)=>k[i]===j);return m.length?[avg(m.map(z=>z[0])),avg(m.map(z=>z[1]))]:c})}
+  const G=[0,1,2].map(j=>{const m=F.filter((f,i)=>k[i]===j);return{j,n:m.length,x:avg(m.map(f=>f.x)),y:avg(m.map(f=>f.y))}}).filter(g=>g.n).sort((a,b)=>a.x-b.x);
+  const NAMES=['Heavy','Middle','Pump'],COLS=['#d95926','#3987e5','#199e70'];G.forEach((g,i)=>{g.name=G.length===3?NAMES[i]:i===0?'Heavy':'Pump';g.col=G.length===3?COLS[i]:i===0?COLS[0]:COLS[2]});
+  F.forEach((f,i)=>f.g=G.find(g=>g.j===k[i]));return{F,G}}
+const tenWord=x=>x.toFixed(0);
 
-function lockHTML(id,acc){const [have,need,unit]=(NEEDS[id.startsWith('custom')?'custom':id]||(()=>[1,1,'']))();if(have>=need)return null;
-  const name=id.startsWith('custom')?'Custom chart':CARDS[id].name;const left=need-have;
-  return `<div class="an-card" data-lock="1"><span class="an-bar" style="background:${acc}"></span>${edit?`<div class="an-ctl"><button data-up="${id}" aria-label="Move up">↑</button><button data-rm="${id}" aria-label="Remove">×</button></div>`:''}<div class="an-k" style="color:${acc}">${name.toUpperCase()}</div>
-    <div class="an-lock" style="margin-top:10px"><b>Fills in after ${left} more ${plural(left,unit)}</b><span>${have} of ${need} so far</span><div class="an-pb"><i style="width:${Math.min(100,have/need*100)}%"></i></div></div></div>`}
+Object.assign(CARDS,{
+  restdist:{tab:'overview',name:'Your rests',desc:'Shows how long you really rest between sets',hex:'#d95926',make(){
+    const R=SETS.filter(r=>r.rest!=null&&r.start>NOW-90*DAY).map(r=>r.rest);const med=[...R].sort((a,b)=>a-b)[Math.floor(R.length/2)];
+    const B=[];for(let a=0;a<300;a+=30)B.push({lo:a,hi:a+30,n:R.filter(v=>v>=a&&v<a+30).length});B.push({lo:300,hi:1e9,n:R.filter(v=>v>=300).length});
+    const h=150,pl=10,pr=10,pt=26,pb=22,bw=(W-pl-pr)/B.length,mx=Math.max(...B.map(b=>b.n))||1,Y=v=>h-pb-v/mx*(h-pt-pb);let o=`<svg class="ch" viewBox="0 0 ${W} ${h}">`;
+    B.forEach((b,i)=>{const x=pl+i*bw;const on=med>=b.lo&&med<b.hi;o+=`<rect x="${(x+2).toFixed(1)}" y="${Y(b.n).toFixed(1)}" width="${(bw-4).toFixed(1)}" height="${(h-pb-Y(b.n)).toFixed(1)}" rx="5" fill="#d95926" fill-opacity="${on?1:.42}"/>`;
+      o+=`<rect x="${x.toFixed(1)}" y="${pt}" width="${bw.toFixed(1)}" height="${h-pt-pb}" fill="transparent" data-tip="<b>${b.hi>1e8?'5:00 or more':mmss(b.lo)+' to '+mmss(b.hi)}</b><br>${b.n} rests · ${pct(b.n,R.length)}%"/>`});
+    [60,120,180,240].forEach(v=>o+=xLab(pl+v/30*bw,h,mmss(v)));o+=xLab(pl+10.5*bw,h,'5:00+');
+    const mxp=pl+Math.min(med,299)/30*bw;o+=`<line x1="${mxp.toFixed(1)}" x2="${mxp.toFixed(1)}" y1="${pt+6}" y2="${h-pb}" stroke="#f0efec" stroke-width="1.4" stroke-dasharray="3 3"/>`+pillT(mxp,pt-6,'Median '+mmss(med),pl,pr)+'</svg>';
+    const under=pct(R.filter(v=>v<120).length,R.length),over=pct(R.filter(v=>v>=240).length,R.length);
+    return{k:'YOUR RESTS',h:`Your typical rest is ${mmss(med)}<small>From ${R.length} rests in the last 90 days</small>`,custom:o,
+      ins:{h:`Half your rests are shorter than ${mmss(med)}, half are longer.`,facts:[[under+'%','of rests under 2:00'],[over+'%','of rests 4:00 or longer']],p:['Each bar counts your rests of that length, in 30-second steps. The bright bar is where your typical rest falls.','A few very long rests don\'t pull this number up, so it reflects what you normally do.'],n:R.length+' rests'}}}},
+  realgain:{tab:'overview',perLift:1,name:'Real or noise?',desc:'Shows whether your recent change is real or just a normal swing',hex:'#199e70',make(){
+    const sb=sessBest(ex);const end=sb[sb.length-1].start;const A=sb.filter(r=>end-r.start<42*DAY),B=sb.filter(r=>end-r.start>=42*DAY&&end-r.start<84*DAY);
+    const a=A.map(r=>r.e1),b=B.map(r=>r.e1);const obs=avg(a)-avg(b);const R=rng(11);const D=[];for(let i=0;i<2000;i++){let s1=0,s2=0;for(let j=0;j<a.length;j++)s1+=a[Math.floor(R()*a.length)];for(let j=0;j<b.length;j++)s2+=b[Math.floor(R()*b.length)];D.push(s1/a.length-s2/b.length)}
+    D.sort((x,y)=>x-y);const lo=D[Math.floor(D.length*.05)],hi=D[Math.floor(D.length*.95)];const verdict=lo>0?'real gain':hi<0?'real drop':'could be noise';const vc=lo>0?'#199e70':hi<0?'#e66767':'#c98500';
+    const h=180,pt=14,pb=24,all=a.concat(b);const yt=nice(Math.min(...all),Math.max(...all));const Y=v=>pt+(1-(v-yt[0])/((yt[yt.length-1]-yt[0])||1))*(h-pt-pb);
+    let o=`<svg class="ch" viewBox="0 0 ${W} ${h}">`+gridY(yt,Y,v=>Math.round(v),32,96);
+    [[B,'#77776f','6 to 12 wk ago',82],[A,'#199e70','Last 6 wk',170]].forEach(([L,c,lab,cx])=>{const m=avg(L.map(r=>r.e1));
+      L.forEach((r,i)=>{const x=cx+((i*37)%29-14);o+=mark(x,Y(r.e1),'c',c,3.6,'#1a1a19')+tipC(x,Y(r.e1),`<b>${fmtDay(r.start)}</b><br>${r.w} ${U()} × ${r.r} ≈ ${r.e1.toFixed(1)} ${U()}`,6)});
+      o+=`<line x1="${cx-26}" x2="${cx+26}" y1="${Y(m).toFixed(1)}" y2="${Y(m).toFixed(1)}" stroke="#f0efec" stroke-width="2.5" stroke-linecap="round"/>`+xLab(cx,h,lab)});
+    const rx=W-44,span=Math.max(Math.abs(lo),Math.abs(hi),Math.abs(obs),1)*1.25,cy=(pt+h-pb)/2,s=(h-pt-pb)/2/span,Yc=v=>cy-v*s;
+    o+=`<line x1="${rx-16}" x2="${rx+16}" y1="${cy}" y2="${cy}" stroke="#55554f" stroke-dasharray="2 3"/><text x="${rx-20}" y="${cy+3.5}" text-anchor="end" font-size="9.5" font-weight="700" fill="#8a8980">0</text>`;
+    o+=`<line x1="${rx}" x2="${rx}" y1="${Yc(lo).toFixed(1)}" y2="${Yc(hi).toFixed(1)}" stroke="${vc}" stroke-width="7" stroke-linecap="round" stroke-opacity=".85"/>`+mark(rx,Yc(obs),'c','#f0efec',4.6,'#1a1a19');
+    o+=`<text x="${rx}" y="${(Math.min(Yc(hi),Yc(lo))-9).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="900" fill="#f0efec">${obs>=0?'+':''}${obs.toFixed(1)}</text>`+xLab(rx,h,'Change')+tipC(rx,Yc(obs),`<b>Likely range</b><br>${lo>=0?'+':''}${lo.toFixed(1)} to ${hi>=0?'+':''}${hi.toFixed(1)} ${U()}`,14)+'</svg>';
+    return{k:'REAL OR NOISE?',h:`${obs>=0?'Up':'Down'} ${Math.abs(obs).toFixed(1)} ${U()} in 6 weeks<small style="color:${vc}">${lo>0?'This is a real gain':hi<0?'This is a real drop':'Too small to call yet'}</small>`,custom:o,
+      ins:{h:lo>0?`Your ${ex} really is stronger than 6 weeks ago.`:hi<0?`Your ${ex} really has dipped over the last 6 weeks.`:`The change in your ${ex} is small enough that it could be day-to-day noise.`,
+        facts:[[(obs>=0?'+':'')+obs.toFixed(1)+' '+U(),'average best set, last 6 weeks vs the 6 before'],[`${lo>=0?'+':''}${lo.toFixed(1)} to ${hi>=0?'+':''}${hi.toFixed(1)}`,'likely range of the real change']],
+        p:['Each dot is your best set in one session, as an estimated one-rep max. The white lines are the average for each 6 weeks.','The bar on the right shows how big the change could really be, given how much your sessions vary. If the whole bar is above 0, you\'ve really gotten stronger. If it crosses 0, the change could just be normal ups and downs, so check again in a few weeks.'],n:(A.length+B.length)+' sessions of '+ex}}}},
+  forecast:{tab:'overview',perLift:1,name:'Where it\'s heading',desc:'Shows where a lift is heading over the next 8 weeks',hex:'#3987e5',make(){
+    const sb=sessBest(ex);const t0=sb[0].start;const wk={};sb.forEach(r=>{const w=Math.floor((r.start-t0)/(7*DAY));if(!wk[w]||r.e1>wk[w].e1)wk[w]=r});const P=Object.entries(wk).map(([w,r])=>({x:+w,y:r.e1,r})).sort((a,b)=>a.x-b.x);
+    const last=P[P.length-1].x;const fit=P.filter(p=>p.x>=last-16);const k=slope(fit),c=avg(fit.map(p=>p.y))-k*avg(fit.map(p=>p.x));const sd=Math.sqrt(avg(fit.map(p=>(p.y-(c+k*p.x))**2)))||1;
+    const F=x=>c+k*x,end=last+8;const show=P.filter(p=>p.x>=last-26);const band=x=>sd*(1+.12*(x-last));
+    const ys=show.map(p=>p.y).concat([F(end)+band(end),F(end)-band(end)]);const yt=nice(Math.min(...ys),Math.max(...ys));const h=170,pl=36,pr=10,pt=16,pb=22;const x0=Math.max(show[0].x,last-26);
+    const X=v=>pl+(v-x0)/(end-x0)*(W-pl-pr),Y=v=>pt+(1-(v-yt[0])/((yt[yt.length-1]-yt[0])||1))*(h-pt-pb);
+    let o=`<svg class="ch" viewBox="0 0 ${W} ${h}">`+gridY(yt,Y,v=>Math.round(v),pl);
+    const up=[],dn=[];for(let x=last;x<=end;x+=.5){up.push([X(x),Y(F(x)+band(x))]);dn.unshift([X(x),Y(F(x)-band(x))])}
+    o+=`<path d="${pathOf(up.concat(dn))}Z" fill="#3987e5" fill-opacity=".16"/>`;
+    o+=`<path d="${pathOf(show.map(p=>[X(p.x),Y(p.y)]))}" fill="none" stroke="rgba(240,239,236,.35)" stroke-width="1.2"/>`;
+    show.forEach(p=>o+=mark(X(p.x),Y(p.y),'c','#8a8980',3,'#1a1a19')+tipC(X(p.x),Y(p.y),`<b>Week of ${fmtDate(p.r.start)}</b><br>${p.r.w} ${U()} × ${p.r.r} ≈ ${p.y.toFixed(1)} ${U()}`,6));
+    o+=`<path d="M${X(last).toFixed(1)} ${Y(F(last)).toFixed(1)}L${X(end).toFixed(1)} ${Y(F(end)).toFixed(1)}" stroke="#3987e5" stroke-width="2.4" stroke-dasharray="5 4"/>`+mark(X(end),Y(F(end)),'c','#3987e5',5.6);
+    o+=pillT(X(end)-30,Y(F(end))-16,'~'+Math.round(F(end))+' '+U(),pl,pr)+`<line x1="${X(last).toFixed(1)}" x2="${X(last).toFixed(1)}" y1="${pt}" y2="${h-pb}" stroke="#3a3a37" stroke-dasharray="2 3"/>`;
+    o+=xLab(X(x0),h,x0===last-26?'6 mo ago':fmtDate(show[0].r.start),'start')+xLab(X(last),h,'Now')+xLab(X(end),h,'+8 wk','end')+'</svg>';const mo=k*4.35;
+    return{k:'WHERE IT\'S HEADING',h:`About ${Math.round(F(end))} ${U()} in 8 weeks<small>${mo>=.2?`If you keep adding ${mo.toFixed(1)} ${U()} a month`:mo<=-.2?`If the current dip of ${Math.abs(mo).toFixed(1)} ${U()} a month continues`:'You\'re holding steady'}</small>`,custom:o,
+      ins:{h:mo>=.2?`At your current pace your ${ex} reaches about ${Math.round(F(end))} ${U()} in 8 weeks.`:mo<=-.2?`Your ${ex} has been trending down. If nothing changes it lands near ${Math.round(F(end))} ${U()} in 8 weeks.`:`Your ${ex} is holding steady, around ${Math.round(F(end))} ${U()}.`,
+        facts:[[(mo>=0?'+':'')+mo.toFixed(1)+' '+U(),'a month, over the last 4 months'],['±'+band(end).toFixed(1)+' '+U(),'likely spread by week 8']],p:['The dashed line carries your last 4 months forward 8 weeks. The shaded area shows how far off it could reasonably be, and it widens the further out it goes.','It assumes you keep training the same way. Time off or a new program will change it.'],n:fit.length+' weeks of '+ex}}}},
+  droptrend:{tab:'advanced',perLift:1,name:'Drop-off',desc:'Shows how many reps you lose from set 1 to set 3, month by month',hex:'#199e70',make(){
+    const D=dropRows(ex);const mo={};D.forEach(d=>{const m=monthIdx(d.start);(mo[m]=mo[m]||[]).push(d.pct)});const pts=Object.entries(mo).map(([m,a])=>({x:+m,y:avg(a),n:a.length})).filter(p=>p.n>=2).sort((a,b)=>a.x-b.x);
+    if(pts.length<2)return{k:'DROP-OFF',h:'Drop-off',series:[],lock:[pts.length,2,'month']};const f=pts[0],l=pts[pts.length-1];const best=pts.reduce((a,b)=>b.y<a.y?b:a,pts[0]);
+    return{k:'DROP-OFF',h:`You lose ${Math.round(l.y)}% of your reps by set 3<small>${monthName(f.x)} it was ${Math.round(f.y)}%</small>`,ht:150,series:[{pts,tip:p=>`<b>${monthName(p.x)}</b><br>${p.y.toFixed(0)}% of reps lost on average · ${p.n} sessions`,drill:p=>{const xs=D.filter(d=>monthIdx(d.start)===p.x);return{k:'DROP-OFF',h:`${monthName(p.x)}: ${xs.length} sessions`,rows:xs.map(d=>[fmtDay(d.start),'set 1 to 3',d.pct.toFixed(0)+'% lost'])}}}],
+      xr:[f.x,l.x],xt:[f.x,Math.round((f.x+l.x)/2),l.x],yt:nice(0,Math.max(...pts.map(p=>p.y))),xfmt:i=>monthName(i),yfmt:v=>v+'%',crit:[{p:best,label:'Least'}],
+      ins:{h:`Lately you lose about ${Math.round(l.y)}% of your reps from set 1 to set 3 on ${ex}${l.y<f.y?`, down from ${Math.round(f.y)}%`:l.y>f.y?`, up from ${Math.round(f.y)}%`:''}.`,facts:[[Math.round(best.y)+'%',`least drop-off, ${monthName(best.x)}`],[Math.round(avg(D.map(d=>d.pct)))+'%','average across the year']],
+        p:['Lower is better. It means you\'re holding your reps from set to set, which can improve even when the weight on the bar doesn\'t.','Only sessions where the weight stayed the same are counted, so lowering the weight never looks like lost reps.'],n:D.length+' sessions of '+ex}}}},
+  restpay:{tab:'advanced',perLift:1,name:'Rest pays off',desc:'Shows how many extra reps more rest gets you',hex:'#3987e5',make(){
+    const R=exSets().filter(r=>r.set===2&&r.rest!=null&&r.prevW===r.w&&r.prevR>=4&&r.rest>=20&&r.rest<=600).map(r=>({x:r.rest,y:r.r/r.prevR*100,r}));
+    const fit=logFit(R.map(p=>p.x),R.map(p=>p.y));const g=fit.f(150)-fit.f(90);const h=170,pl=38,pr=10,pt=14,pb=22,x0=30,x1=300;
+    const yt=nice(Math.max(40,Math.min(...R.map(p=>p.y))),Math.min(120,Math.max(...R.map(p=>p.y))));const X=v=>pl+(Math.min(x1,Math.max(x0,v))-x0)/(x1-x0)*(W-pl-pr),Y=v=>pt+(1-(Math.min(yt[yt.length-1],Math.max(yt[0],v))-yt[0])/((yt[yt.length-1]-yt[0])||1))*(h-pt-pb);
+    let o=`<svg class="ch" viewBox="0 0 ${W} ${h}">`+gridY(yt,Y,v=>v+'%',pl);R.forEach(p=>o+=`<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="2.6" fill="#3987e5" fill-opacity=".5"/>`);
+    const C=[];for(let x=x0;x<=x1;x+=5)C.push([X(x),Y(fit.f(x))]);o+=`<path d="${pathOf(C)}" fill="none" stroke="#f0efec" stroke-width="2.2"/>`;
+    [[90,'1:30'],[150,'2:30']].forEach(([x,l])=>o+=mark(X(x),Y(fit.f(x)),'c','#3987e5',5)+tipC(X(x),Y(fit.f(x)),`<b>After ${l} rest</b><br>about ${fit.f(x).toFixed(0)}% of set 1 reps`));
+    [60,120,180,240,300].forEach(v=>o+=xLab(X(v),h,mmss(v)));o+=pillT(X(150),Y(fit.f(150))-16,(g>=0?'+':'')+g.toFixed(0)+'% reps',pl,pr)+'</svg>';
+    return{k:'REST PAYS OFF',h:g>=1?`${g.toFixed(0)}% more reps with 2:30 rest<small>Compared with 1:30, on your second set</small>`:'Extra rest barely changes your reps<small>Going from 1:30 to 2:30, on your second set</small>',custom:o,
+      ins:{h:`On ${ex}, resting 2:30 instead of 1:30 gets you about ${Math.abs(g).toFixed(0)}% ${g>=0?'more':'fewer'} reps on set 2.`,facts:[[fit.f(90).toFixed(0)+'%','of set 1 reps after 1:30'],[fit.f(150).toFixed(0)+'%','of set 1 reps after 2:30']],
+        p:['Each dot is a second set: how long you rested before it, and its reps compared with set 1 at the same weight.','The white line is your typical result for each rest length. Each extra minute helps a little less than the one before.'],n:R.length+' set 2s of '+ex}}}},
+  hitreps:{tab:'advanced',perLift:1,name:'Hit your reps',desc:'Shows how long to rest to match your first set',hex:'#9085e9',make(){
+    const P=hitPairs();const f=logistic(P);const h=170,pl=38,pr=10,pt=14,pb=22,x0=30,x1=300;const X=v=>pl+(v-x0)/(x1-x0)*(W-pl-pr),Y=v=>pt+(1-v)*(h-pt-pb);
+    let o=`<svg class="ch" viewBox="0 0 ${W} ${h}">`+gridY([0,.5,1],Y,v=>Math.round(v*100)+'%',pl);
+    bins(P.filter(p=>p.x>=x0&&p.x<x1).map(p=>({x:p.x,y:p.y})),x0,30,9,5).forEach(b=>o+=mark(X(b.x),Y(b.y),'c','#9085e9',4.4)+tipC(X(b.x),Y(b.y),`<b>${mmss(b.lo)} to ${mmss(b.hi)}</b><br>hit it ${Math.round(b.y*100)}% of the time · ${b.n} sets`));
+    const C=[];for(let x=x0;x<=x1;x+=5)C.push([X(x),Y(f(x))]);o+=`<path d="${pathOf(C)}" fill="none" stroke="#f0efec" stroke-width="2.2"/>`;
+    o+=`<line x1="${X(120).toFixed(1)}" x2="${X(120).toFixed(1)}" y1="${Y(f(120)).toFixed(1)}" y2="${h-pb}" stroke="#55554f" stroke-dasharray="3 3"/>`+pillT(X(120),Y(f(120))-16,'2:00 → '+Math.round(f(120)*100)+'%',pl,pr);
+    [60,120,180,240,300].forEach(v=>o+=xLab(X(v),h,mmss(v)));o+='</svg>';const p60=f(60),p150=f(150);
+    let need=null;for(let x=30;x<=300;x+=5)if(f(x)>=.7){need=x;break}
+    return{k:'HIT YOUR REPS',h:need?`Rest ${mmss(need)} to match set 1<small>That works 7 times out of 10. After 1:00 it\'s ${Math.round(p60*100)}%</small>`:`Longer rest doesn\'t help you match set 1<small>${Math.round(p150*100)}% after 2:30, ${Math.round(p60*100)}% after 1:00</small>`,custom:o,
+      ins:{h:need?`On ${ex}, about ${mmss(need)} of rest gives you a 70% chance of getting within 1 rep of set 1.`:`On ${ex}, longer rest doesn't push your odds past 70%.`,facts:[[Math.round(p60*100)+'%','chance after 1:00'],[Math.round(p150*100)+'%','chance after 2:30']],
+        p:['Matching means getting within 1 rep of set 1 at the same weight.','The purple dots show how often you actually did it after each length of rest. The white line is your chance for any rest length.'],n:P.length+' sets of '+ex}}}},
+  normal:{tab:'advanced',perLift:1,name:'Normal range',desc:'Flags sessions that were far off your usual',hex:'#e66767',make(){
+    const sb=sessBest(ex);const pts=[];sb.forEach((r,i)=>{if(i<4)return;const w=sb.slice(Math.max(0,i-8),i).map(q=>q.e1);const m=avg(w);const sd=Math.max(Math.sqrt(avg(w.map(v=>(v-m)**2))),m*.015);pts.push({r,y:r.e1,m,sd,odd:Math.abs(r.e1-m)>2*sd})});
+    const L=pts.slice(-40);const n=L.length;const ys=L.flatMap(p=>[p.y,p.m+2*p.sd,p.m-2*p.sd]);const yt=nice(Math.min(...ys),Math.max(...ys));const h=170,pl=36,pr=10,pt=16,pb=22;
+    const X=i=>pl+i/(Math.max(1,n-1))*(W-pl-pr),Y=v=>pt+(1-(v-yt[0])/((yt[yt.length-1]-yt[0])||1))*(h-pt-pb);let o=`<svg class="ch" viewBox="0 0 ${W} ${h}">`+gridY(yt,Y,v=>Math.round(v),pl);
+    o+=`<path d="${pathOf(L.map((p,i)=>[X(i),Y(p.m+2*p.sd)]).concat(L.map((p,i)=>[X(i),Y(p.m-2*p.sd)]).reverse()))}Z" fill="#3987e5" fill-opacity=".13"/><path d="${pathOf(L.map((p,i)=>[X(i),Y(p.m)]))}" fill="none" stroke="#3987e5" stroke-width="1.4" stroke-dasharray="4 3"/>`;
+    L.forEach((p,i)=>{o+=p.odd?mark(X(i),Y(p.y),'c','#e66767',5.4):mark(X(i),Y(p.y),'c','#c3c2b7',3.2,'#1a1a19');o+=tipC(X(i),Y(p.y),`<b>${fmtDay(p.r.start)}</b><br>${p.r.w} ${U()} × ${p.r.r} ≈ ${p.y.toFixed(1)} ${U()}<br>normal ${(p.m-2*p.sd).toFixed(0)}–${(p.m+2*p.sd).toFixed(0)}`,7)});
+    const odd=L.filter(p=>p.odd);const lo=odd[odd.length-1];if(lo){const i=L.indexOf(lo);o+=pillT(X(i),lo.y<lo.m?Y(lo.y)+20:Y(lo.y)-15,lo.y<lo.m?'Off day':'Big day',pl,pr)}
+    o+=xLab(X(0),h,fmtDate(L[0].r.start),'start')+xLab(X(n-1),h,'Now','end')+'</svg>';const offs=odd.filter(p=>p.y<p.m).length;
+    return{k:'NORMAL RANGE',h:odd.length?`${odd.length} of your last ${n} sessions were unusual<small>${[offs?offs+' below':'',odd.length-offs?(odd.length-offs)+' above':''].filter(Boolean).join(' and ')} your normal</small>`:`Your last ${n} sessions were all normal<small>Nothing far off your usual</small>`,custom:o,
+      ins:{h:odd.length?`${odd.length} of your last ${n} ${ex} sessions fell outside your normal range: ${offs} below, ${odd.length-offs} above.`:`Every one of your last ${n} ${ex} sessions was within your normal range.`,facts:[[odd.length+'',`unusual sessions out of ${n}`],[lo?fmtDate(lo.r.start):'–','most recent one']],
+        p:['The shaded band is your normal: where your sessions usually land, based on the 8 before each one. Almost all sessions fall inside it.','A red dot is worth a thought: sleep, food, a rushed rest, or a real jump in strength.'],n:sb.length+' sessions of '+ex}}}},
+  kinds:{tab:'advanced',name:'Session types',desc:'Shows the kinds of workouts you actually do',hex:'#c98500',make(){
+    const K=sessionKinds();if(!K)return{k:'SESSION TYPES',h:'Session types',series:[],lock:[HIST.length,15,'workout']};const{F,G}=K;const h=180,pl=38,pr=10,pt=12,pb=22;
+    const xt=nice(Math.min(...F.map(f=>f.x)),Math.max(...F.map(f=>f.x)),3),yt=nice(Math.min(...F.map(f=>f.y)),Math.max(...F.map(f=>f.y)),3);
+    const X=v=>pl+(v-xt[0])/((xt[xt.length-1]-xt[0])||1)*(W-pl-pr),Y=v=>pt+(1-(v-yt[0])/((yt[yt.length-1]-yt[0])||1))*(h-pt-pb);
+    let o=`<svg class="ch" viewBox="0 0 ${W} ${h}">`+gridY(yt,Y,v=>mmss(v*60),pl);F.forEach(f=>o+=`<circle cx="${X(f.x).toFixed(1)}" cy="${Y(f.y).toFixed(1)}" r="3.6" fill="${f.g.col}" fill-opacity=".8" data-tip="<b>${fmtDay(f.S.start)}</b> · ${esc(f.S.split||'')}<br>${f.x.toFixed(1)} reps a set · ${mmss(f.y*60)} rests<br>${f.g.name}"/>`);
+    xt.forEach((v,i)=>o+=xLab(X(v),h,i===xt.length-1?v+' reps':String(v)));o+='</svg>';const top=G.reduce((a,b)=>b.n>a.n?b:a,G[0]);const R4=F.filter(f=>f.S.start>NOW-28*DAY);
+    const keys=`<div class="an-keys">${G.map(g=>`<span><svg viewBox="-7 -7 14 14"><circle r="4.4" fill="${g.col}" stroke="#f0efec" stroke-width="1.6"/></svg>${g.name} ${pct(g.n,F.length)}%</span>`).join('')}</div>`;
+    return{k:'SESSION TYPES',h:`${pct(top.n,F.length)}% of your sessions are ${top.name.toLowerCase()} days<small>${G.filter(g=>g!==top).map(g=>`${g.name} ${pct(g.n,F.length)}%`).join(', ')}</small>`,custom:o+keys,
+      ins:{h:`Your workouts fall into ${G.length} kinds: ${G.map(g=>`${g.name.toLowerCase()} (about ${g.x.toFixed(0)} reps, ${mmss(g.y*60)} rests)`).join(', ')}.`,facts:G.slice(0,2).map(g=>[pct(g.n,F.length)+'%',g.name.toLowerCase()+' sessions']),
+        p:['Each dot is one session, placed by its average reps per set and average rest. The app sorts them into 3 groups on its own, so you don\'t have to label anything.',R4.length?`In the last 4 weeks: ${G.map(g=>`${R4.filter(f=>f.g===g).length} ${g.name.toLowerCase()}`).join(', ')}.`:''].filter(Boolean),n:F.length+' sessions'}}}},
+  lastwk:{tab:'overview',name:'Last workout',desc:'Reps set to set from your latest session',hex:'#199e70',make(){
+    const rec=hist.filter(h=>h&&Array.isArray(h.ex)&&h.ex.length).reduce((a,b)=>(b.start||0)>=(a.start||0)?b:a);const V=wkViews(rec);
+    return{k:'LAST WORKOUT',h:`${esc(rec.split||'Workout')}<small>${fmtDay(rec.start||Date.now())}</small>`,custom:`<div class="wk-mini">${V.drop.body}</div><div class="wk-hint">Tap for sets, volume and rest</div>`,open:()=>workoutSheet(rec,`${rec.split||'Workout'} · ${fmtDay(rec.start||Date.now())}`)}}},
+});
+Object.assign(NEEDS,{
+  restdist:()=>[SETS.filter(r=>r.rest!=null&&r.start>NOW-90*DAY).length,20,'timed rest in the last 90 days'],
+  realgain:()=>{const sb=sessBest(ex);if(!sb.length)return[0,6,'session of '+ex];const end=sb[sb.length-1].start;const a=sb.filter(r=>end-r.start<42*DAY).length,b=sb.filter(r=>end-r.start>=42*DAY&&end-r.start<84*DAY).length;return[Math.min(a,3)+Math.min(b,3),6,'session of '+ex+' across 12 weeks']},
+  forecast:()=>{const sb=sessBest(ex);if(!sb.length)return[0,6,'week of '+ex];const t0=sb[0].start,last=Math.floor((sb[sb.length-1].start-t0)/(7*DAY));return[new Set(sb.filter(r=>Math.floor((r.start-t0)/(7*DAY))>=last-16).map(r=>Math.floor((r.start-t0)/(7*DAY)))).size,6,'week of '+ex]},
+  droptrend:()=>[dropRows(ex).length,8,'session of '+ex+' with 2+ sets at one weight'],
+  restpay:()=>[exSets().filter(r=>r.set===2&&r.rest!=null&&r.prevW===r.w&&r.prevR>=4).length,15,'rest before set 2 of '+ex],
+  hitreps:()=>[hitPairs().length,25,'rest after set 1 of '+ex],
+  normal:()=>[sessBest(ex).length,10,'session of '+ex],
+  kinds:()=>[HIST.filter(S=>S.ex.some(E=>(E.sets||[]).some(s=>s.rest))).length,15,'timed workout'],
+  lastwk:()=>[hist.filter(h=>h&&Array.isArray(h.ex)&&h.ex.length).length,1,'workout'],
+});
+// the new cards join the lists once, for people who set up their charts before they existed
+if(!S.get('gym.statsCards1',false)){const ins=(L,ids,after)=>{let a=after;ids.forEach(id=>{if(L.includes(id)){a=id;return}const i=a?L.indexOf(a):-1;if(i>=0)L.splice(i+1,0,id);else L.push(id);a=id})};
+  if(!lists.overview.includes('lastwk'))lists.overview.unshift('lastwk');
+  ins(lists.overview,['realgain','forecast'],'rate');ins(lists.overview,['restdist'],'split');ins(lists.advanced,['droptrend','restpay','hitreps','normal','kinds'],'rest');S.set('gym.statsCards1',true);saveLists()}
+
+/* ---- end of workout: reps set to set, drop-off vs usual, volume, rest ---- */
+function wkViews(rec){const before=hist.filter(h=>h&&h!==rec&&Array.isArray(h.ex)&&(h.start||0)<(rec.start||Infinity)).sort((a,b)=>(a.start||0)-(b.start||0));
+  const prevOf=n=>{for(let i=before.length-1;i>=0;i--){const e=before[i].ex.find(x=>x.name===n&&x.sets&&x.sets.length);if(e)return{e,h:before[i]}}return null};
+  const E=rec.ex.filter(e=>e.sets&&e.sets.some(s=>s.r>0)).map((e,i)=>{const p=prevOf(e.name);const us=before.flatMap(h=>h.ex.filter(x=>x.name===e.name).map(x=>dropPct(x.sets))).filter(v=>v!=null);
+    const m=us.length>=3?avg(us):null,sd=us.length>=3?Math.sqrt(avg(us.map(v=>(v-m)**2))):null;return{name:e.name,sets:e.sets.filter(s=>s.r>0),prev:p,col:EXC[i%EXC.length],drop:dropPct(e.sets),m,sd}});
+  const nm=n=>esc(n);
+  // A: reps set to set, one small chart per exercise
+  const lost=E.map(e=>e.sets[0].r-e.sets[e.sets.length-1].r);const mostI=lost.indexOf(Math.max(...lost));
+  const A=`<div class="wk-grid">${E.map((e,i)=>{const r=e.sets.map(s=>s.r),pr=e.prev?e.prev.e.sets.filter(s=>s.r>0).map(s=>s.r):[];const all=r.concat(pr);const lo=Math.min(...all),hi=Math.max(...all);const n=Math.max(r.length,pr.length);
+      const X=j=>16+j*(118/Math.max(1,n-1)),Y=v=>20+(hi-v)/((hi-lo)||1)*30;const d=lost[i];
+      let s=`<svg viewBox="0 0 150 66">`;if(pr.length)s+=`<path d="${pathOf(pr.map((v,j)=>[X(j),Y(v)]))}" fill="none" stroke="#55554f" stroke-width="1.4" stroke-dasharray="3 3"/>`+pr.map((v,j)=>`<circle cx="${X(j).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="2.4" fill="#55554f"/>`).join('');
+      s+=`<path d="${pathOf(r.map((v,j)=>[X(j),Y(v)]))}" fill="none" stroke="${e.col}" stroke-width="2"/>`+r.map((v,j)=>mark(X(j),Y(v),'c',e.col,3.6,'#141413')+`<text x="${X(j).toFixed(1)}" y="${(Y(v)-7).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="800" fill="#c3c2b7">${v}</text>`).join('');
+      s+=Array.from({length:n},(_,j)=>`<text x="${X(j).toFixed(1)}" y="63" text-anchor="middle" font-size="8.5" font-weight="700" fill="#8a8980">S${j+1}</text>`).join('')+'</svg>';
+      return `<div class="wk-mc"><div class="wk-mh"><b>${nm(e.name)}</b><span style="color:${d>=3?'#e66767':d<=0?'#199e70':'#c3c2b7'}">${d>0?'−'+d:d===0?'held':'+'+(-d)}</span></div>${s}</div>`}).join('')}</div>
+    <div class="wk-leg"><i style="background:#c3c2b7"></i>Today${E.some(e=>e.prev)?'<i style="background:#55554f"></i>Last time':''}</div>`;
+  const Ah=lost[mostI]>0?`${nm(E[mostI].name)} lost the most reps<small>${lost[mostI]} from set 1 to the last set</small>`:'You held every rep<small>From set 1 to the last set</small>';
+  // B: drop-off against your usual range
+  const sc=v=>Math.min(100,Math.max(0,v/50*100));let worst=null,wv=-1e9;E.forEach(e=>{if(e.drop==null)return;const z=e.m!=null?(e.drop-e.m)/Math.max(e.sd,3):e.drop/20;if(z>wv){wv=z;worst=e}});
+  const B=`<div class="wk-rows">${E.map(e=>{const has=e.drop!=null;const c=!has?'#55554f':e.m==null?'#d95926':e.drop>e.m+e.sd?'#e66767':e.drop<e.m-e.sd||e.drop===0?'#199e70':'#d95926';
+      return `<div class="wk-row"><b>${nm(e.name)}</b><div class="wk-track">${e.m!=null?`<i class="wk-band" style="left:${sc(e.m-e.sd)}%;width:${Math.max(2,sc(e.m+e.sd)-sc(e.m-e.sd))}%"></i><i class="wk-avg" style="left:${sc(e.m)}%"></i>`:''}${has?`<i class="wk-bar" style="width:${Math.max(3,sc(e.drop))}%;background:${c}"></i>`:''}</div><span>${has?Math.round(e.drop)+'%':'<small>weight changed</small>'}</span></div>`}).join('')}
+    <div class="wk-axis"><span></span><div><small>0%</small><small>25%</small><small>50%</small></div><span></span></div></div><div class="wk-leg"><i style="background:#d95926"></i>Reps lost, set 1 to 3${E.some(e=>e.m!=null)?'<i class="sq" style="background:#3a3a36"></i>Your usual range':''}</div>`;
+  const Bh=!worst?'Nothing to compare today<small>The weight changed between sets on every lift</small>':worst.m!=null&&worst.drop>worst.m+worst.sd?`${nm(worst.name)} dropped ${Math.round(worst.drop)}% of its reps<small>Usually ${Math.round(worst.m)}%</small>`:E.every(e=>e.m!=null)?'Every lift held up as usual<small>Reps lost from set 1 to set 3</small>':`${nm(worst.name)} dropped the most<small>${Math.round(worst.drop)}% of its reps by set 3</small>`;
+  // D: volume against last time
+  const vol=s=>s.reduce((a,x)=>a+(+x.w||0)*x.r,0);const V=E.map(e=>({e,t:vol(e.sets),p:e.prev?vol(e.prev.e.sets):null}));const vmax=Math.max(1,...V.flatMap(v=>[v.t,v.p||0]));
+  const D=`<div class="wk-rows">${V.map(v=>{const ch=v.p?(v.t/v.p-1)*100:null;return `<div class="wk-row"><b>${nm(v.e.name)}</b><div class="wk-vol">${v.p!=null?`<i style="width:${v.p/vmax*100}%;background:#3a3a36"></i>`:''}<i style="width:${v.t/vmax*100}%;background:${ch==null||ch>=0?'#199e70':'#d95926'}"></i></div><span>${ch==null?'<small>first</small>':(ch>=0?'+':'')+Math.round(ch)+'%'}</span></div>`}).join('')}</div>
+    <div class="wk-leg"><i class="sq" style="background:#3a3a36"></i>Last time<i class="sq" style="background:#199e70"></i>Today, weight × reps</div>`;
+  const VT=V.filter(v=>v.p),tt=VT.reduce((a,v)=>a+v.t,0),tp=VT.reduce((a,v)=>a+v.p,0);const Dh=VT.length&&tp?`${Math.abs(Math.round((tt/tp-1)*100))}% ${tt>=tp?'more':'less'} work than last time<small>Weight × reps, on lifts you\'ve done before</small>`:'First time for these lifts<small>Next time you\'ll see the comparison</small>';
+  // E: rest against reps kept, today on top of your usual
+  const hp=[];before.filter(h=>(h.start||0)>(rec.start||Date.now())-120*DAY).forEach(h=>h.ex.forEach(x=>{const s=(x.sets||[]).filter(q=>q.r>0);if(!s.length)return;s.slice(1).forEach(q=>{if(q.rest&&(+q.w||0)===(+s[0].w||0))hp.push({x:q.rest/1000,y:q.r/s[0].r*100})})}));
+  const tp2=[];E.forEach(e=>e.sets.slice(1).forEach((q,j)=>{if(q.rest&&(+q.w||0)===(+e.sets[0].w||0))tp2.push({x:q.rest/1000,y:q.r/e.sets[0].r*100,col:e.col,set:j+2,n:e.name})}));
+  const fit=hp.length>=20?logFit(hp.map(p=>Math.max(15,p.x)),hp.map(p=>p.y)):null;const h=170,pl=34,pr=10,pt=12,pb=22,x0=30,x1=300,yt=[50,75,100];
+  const X=v=>pl+(Math.min(x1,Math.max(x0,v))-x0)/(x1-x0)*(W-pl-pr),Y=v=>pt+(1-(Math.min(115,Math.max(45,v))-45)/70)*(h-pt-pb);
+  let Es=`<svg class="ch" viewBox="0 0 ${W} ${h}">`+gridY(yt,Y,v=>v+'%',pl);hp.forEach(p=>Es+=`<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="2.2" fill="#3a3a37"/>`);
+  if(fit){const C=[];for(let x=x0;x<=x1;x+=5)C.push([X(x),Y(fit.f(x))]);Es+=`<path d="${pathOf(C)}" fill="none" stroke="#8a8980" stroke-width="1.6" stroke-dasharray="4 3"/>`}
+  tp2.forEach(p=>Es+=mark(X(p.x),Y(p.y),p.set===2?'c':'t',p.col,4.8)+tipC(X(p.x),Y(p.y),`<b>${esc(p.n)}</b> · set ${p.set}<br>${mmss(p.x)} rest · ${Math.round(p.y)}% of set 1`,9));
+  [60,120,180,240,300].forEach(v=>Es+=xLab(X(v),h,mmss(v)));Es+='</svg>';
+  const Ekeys=`<div class="wk-leg">${E.map(e=>`<i style="background:${e.col}"></i>${nm(e.name.split(' ').slice(0,2).join(' '))}`).join('')}${fit?'<i class="ln"></i>Your usual':''}</div>`;
+  const kept=tp2.length?avg(tp2.map(p=>p.y)):null,exp=fit&&tp2.length?avg(tp2.map(p=>fit.f(Math.max(15,p.x)))):null;
+  const Eh=kept==null?'No timed rests to show<small>Needs sets at the same weight as set 1</small>':exp!=null?`You kept ${Math.round(kept)}% of your set 1 reps<small>Usually ${Math.round(exp)}% after rests this long</small>`:`You kept ${Math.round(kept)}% of your set 1 reps<small>On average after each rest</small>`;
+  return{drop:{h:Bh,body:B},sets:{h:Ah,body:A},vol:{h:Dh,body:D},rest:{h:Eh,body:Es+Ekeys}}}
+function workoutSheet(rec,title){if(!rec)return;const V=wkViews(rec);const T=[['drop','Drop-off'],['sets','Sets'],['vol','Volume'],['rest','Rest']];
+  const sum=`${clock(rec.total||0)} in the gym · ${rec.sets||rec.ex.reduce((a,e)=>a+e.sets.length,0)} sets · ${clock(rec.tut||0)} under tension · ${clock(rec.rest||0)} resting`;
+  const s=sheet(`<h3>${esc(title||'Workout saved')}</h3><p>${sum}</p><div class="wk-card"><div class="wk-seg">${T.map(([k,l],i)=>`<button data-wkv="${k}" class="${i?'':'on'}">${l}</button>`).join('')}</div>
+    <div class="wk-stack">${T.map(([k],i)=>`<div class="wk-v${i?' off':''}" data-wkp="${k}"><div class="wk-h">${V[k].h}</div>${V[k].body}</div>`).join('')}</div></div><button class="btn w" style="width:100%" data-close>Done</button>`);
+  s.querySelectorAll('[data-wkv]').forEach(b=>b.onclick=e=>{e.stopPropagation();s.querySelectorAll('[data-wkv]').forEach(x=>x.classList.toggle('on',x===b));s.querySelectorAll('[data-wkp]').forEach(p=>p.classList.toggle('off',p.dataset.wkp!==b.dataset.wkv))});return s}
+window.workoutSheet=workoutSheet;
+(function(){const st=document.createElement('style');st.textContent=`
+.wk-card{background:#141413;border-radius:20px;padding:12px 12px 10px;margin:12px 0 14px;border-top:3px solid #199e70;min-width:0}
+.wk-stack{display:grid}.wk-stack>.wk-v{grid-area:1/1;min-width:0}.wk-stack>.wk-v.off{visibility:hidden;pointer-events:none}
+.wk-seg{display:flex;gap:3px;background:#222221;border-radius:12px;padding:3px;margin-bottom:10px}
+.wk-seg button{flex:1;min-width:0;padding:7px 0;border-radius:9px;font-weight:800;font-size:12.5px;color:var(--t3);white-space:nowrap}
+.wk-seg button.on{background:var(--t1);color:#111}
+.wk-h{font-size:17px;font-weight:900;letter-spacing:-.3px;line-height:1.2;margin:0 2px 10px}.wk-h small{font-size:13px}
+.wk-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.wk-mc{background:#1f1f1e;border-radius:12px;padding:8px 8px 4px;min-width:0}
+.wk-mc svg{display:block;width:100%;height:auto}
+.wk-mh{display:flex;justify-content:space-between;gap:6px;font-size:12px;font-weight:800}
+.wk-mh b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wk-mh span{flex:none}
+.wk-rows{display:flex;flex-direction:column;gap:9px}
+.wk-row{display:grid;grid-template-columns:minmax(0,96px) minmax(0,1fr) 44px;align-items:center;gap:8px;font-size:12.5px}
+.wk-row b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800}
+.wk-row>span{text-align:right;font-weight:900;font-size:13px}.wk-row small{font-size:10.5px;color:var(--t3);font-weight:700}
+.wk-track{position:relative;height:18px;border-radius:5px;background:#1f1f1e;overflow:hidden}
+.wk-track .wk-band{position:absolute;top:0;bottom:0;background:#3a3a36;border-radius:4px}
+.wk-track .wk-avg{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#8a8980}
+.wk-track .wk-bar{position:absolute;left:0;top:5px;height:8px;border-radius:4px}
+.wk-axis{display:grid;grid-template-columns:minmax(0,96px) minmax(0,1fr) 44px;gap:8px}.wk-axis div{display:flex;justify-content:space-between}.wk-axis small{font-size:9.5px;color:var(--t3);font-weight:700}
+.wk-vol{display:flex;flex-direction:column;gap:3px}.wk-vol i{display:block;height:7px;border-radius:4px;min-width:3px}
+.wk-leg{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:11px;font-weight:800;color:var(--t2);margin-top:10px}
+.wk-leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:-7px;border:1.5px solid #f0efec}.wk-leg i.sq{border-radius:3px;border:0}.wk-leg i.ln{width:14px;height:0;border:0;border-top:2px dashed #8a8980;border-radius:0}
+.wk-mini .wk-leg{display:none}.wk-hint{font-size:12px;color:var(--t3);font-weight:700;margin-top:10px}
+`;document.head.appendChild(st)})();
+
+
+function lockHTML(id,acc,force){const isC=id.startsWith('custom');const [have,need,unit]=force||(NEEDS[isC?'custom':id]||(()=>[1,1,'']))();if(!force&&have>=need)return null;
+  const name=isC?'Custom chart':CARDS[id].name;const left=need-have;const lift=isC||(CARDS[id]&&CARDS[id].perLift);
+  // say it in workouts: how many more sessions it should take, from how fast this kind of data has come in so far
+  let msg;if(unit==='tod')msg='Shows once you\'ve trained at a few different times of day';else if(/^(month|week)/.test(unit))msg=`Unlocks after ${left} more ${plural(left,unit.replace(/ of .*/,''))}`;
+  else{const sess=lift?new Set(exSets().map(r=>r.si)).size:HIST.length;const rate=sess&&have?have/sess:1;const n=Math.max(1,Math.ceil(left/Math.max(rate,.25)));
+    msg=`Unlocks after ${n} more ${lift&&ex?esc(ex)+' ':''}${n===1?'workout':'workouts'}`}
+  return `<div class="an-card" data-lock="1" data-lockid="${id}"><span class="an-bar" style="background:${acc}"></span>${edit?`<div class="an-ctl"><button data-up="${id}" aria-label="Move up">↑</button><button data-rm="${id}" aria-label="Remove">×</button></div>`:''}<div class="an-k" style="color:${acc}">${name.toUpperCase()}</div>
+    <div class="an-lock" style="margin-top:10px"><b><svg viewBox="0 0 16 16" class="an-lk"><rect x="3" y="7" width="10" height="7.5" rx="2" fill="currentColor"/><path d="M5.3 7V5.2a2.7 2.7 0 0 1 5.4 0V7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>${msg}</b><span>${Math.min(99,Math.round(have/need*100))}% of the way there</span><div class="an-pb"><i style="width:${Math.min(100,have/need*100)}%"></i></div></div>${!isC&&CARDS[id].desc?`<div class="an-why">${esc(CARDS[id].desc)}.</div>`:''}</div>`}
 function cardHTML(id){const isC=id.startsWith('custom');const D=isC?{hex:'#f0efec'}:CARDS[id];if(!D)return'';const acc=isC?'#f0efec':(D.hex||LCOL[ex]);
   if(!isC&&D.perLift&&!ex)return'';const lk=lockHTML(id,acc);if(lk)return lk;
   let c;try{c=isC?customMake(...id.split(':').slice(1)):D.make()}catch(err){console.error(err);return ''}
+  if(c&&c.lock&&!c.custom&&!(c.series||[]).some(S=>S.pts&&S.pts.length))return lockHTML(id,acc,c.lock);
   const ctl=edit?`<div class="an-ctl"><button data-up="${id}" aria-label="Move up">↑</button><button data-rm="${id}" aria-label="Remove">×</button></div>`:`<span class="an-more">i</span>`;
   const axes=isC?`<div class="an-axes"><button data-ax="x" data-id="${id}"><small>X</small>${MET[c.xk].l} ▾</button><button data-ax="y" data-id="${id}"><small>Y</small>${MET[c.yk].l} ▾</button></div>`:'';
   const pill=!isC&&D.perLift&&tab==='overview'&&LIFTS.length>1?`<button class="an-lp" data-lp><i style="background:${LCOL[ex]}"></i>${esc(ex)} ▾</button>`:'';
@@ -446,7 +681,7 @@ function statsHTML(){anRefresh();DRILLS=[];
   const head=`<div class="an-hd"><h1>Analytics ${window.DEMO_DATA?'<span class="an-sample" data-sample>SAMPLE DATA</span>':''}</h1><div style="display:flex;gap:8px"><button class="an-editb${edit?' on':''}" data-aedit>${edit?'Done':'Edit'}</button><button class="iconbtn" data-settings aria-label="Settings">${IC.gear}</button></div></div>`;
   if(!HIST.length)return head+seg+`<div class="an-nolift"><b>Nothing to show yet</b>Finish your first workout and your charts start filling in. Time the sets you can, since a lot of these charts use time under tension and rest.</div>`;
   const noEx=tab==='advanced'&&!ex;
-  return head+seg+(tab==='overview'?overviewTop():LIFTS.length?`<div class="an-exsel">${LIFTS.map(n=>`<button data-aex="${esc(n)}" class="${n===ex?'on':''}"><i style="background:${LCOL[n]}"></i>${esc(n)}</button>`).join('')}</div>`:'')
+  return head+seg+(tab==='overview'?overviewTop():LIFTS.length?`<div class="an-exdd"><button data-lp><span>Lift</span><i style="background:${LCOL[ex]}"></i><b>${esc(ex)}</b><em>▾</em></button></div>`:'')
     +(noEx?`<div class="an-nolift"><b>Log a few more sets</b>Once an exercise with weight has 6 or more sets, it shows up here.</div>`:lists[tab].map(cardHTML).join(''))+`<button class="an-addc" data-aadd>＋ Add a chart</button>`}
 function drawChart(){}
 function bindAnalytics(A){const $$=s=>A.querySelectorAll(s);const M=$('#main');
@@ -462,7 +697,7 @@ function bindAnalytics(A){const $$=s=>A.querySelectorAll(s);const M=$('#main');
   $$('[data-medal]').forEach(b=>b.onclick=()=>medalSheet(b.dataset.medal));
   $$('[data-lp]').forEach(b=>b.onclick=e=>{e.stopPropagation();liftPick()});
   $$('[data-ax]').forEach(b=>b.onclick=e=>{e.stopPropagation();axisPick(b.dataset.id,b.dataset.ax)});
-  $$('[data-card]').forEach(c=>c.onclick=e=>{if(e.target.closest('.an-ctl,.an-axes,.an-lp,[data-tip],[data-drill]'))return;const id=c.dataset.card;try{const d=id.startsWith('custom')?customMake(...id.split(':').slice(1)):CARDS[id].make();showInsight(d,id.startsWith('custom')?LCOL[ex]:(CARDS[id].hex||LCOL[ex]))}catch(err){console.error(err)}});
+  $$('[data-card]').forEach(c=>c.onclick=e=>{if(e.target.closest('.an-ctl,.an-axes,.an-lp,[data-tip],[data-drill]'))return;const id=c.dataset.card;try{const d=id.startsWith('custom')?customMake(...id.split(':').slice(1)):CARDS[id].make();if(d.open)return d.open();showInsight(d,id.startsWith('custom')?LCOL[ex]:(CARDS[id].hex||LCOL[ex]))}catch(err){console.error(err)}});
 }
 function ansheet(html){const app=$('#app');const sc=document.createElement('div');sc.className='scrim an-scrim';const sh=document.createElement('div');sh.className='an-sheet';sh.innerHTML='<div class="an-grab"></div><button class="sclose" aria-label="Close">✕</button>'+html;
   sc.appendChild(sh);app.appendChild(sc);const close=()=>sc.remove();sc.addEventListener('click',e=>{if(e.target===sc)close()});sh.querySelector('.sclose').addEventListener('click',e=>{e.stopPropagation();close()});return{sh,close}}
